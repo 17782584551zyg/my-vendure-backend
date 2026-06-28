@@ -1,0 +1,28 @@
+{
+  "name": "my-vendure-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "populate": "ts-node src/populate.ts"
+  },
+  "dependencies": {
+    "@vendure-community/elasticsearch-plugin": "^1.1.0",
+    "@vendure/admin-ui-plugin": "^3.6.4",
+    "@vendure/asset-server-plugin": "^3.6.4",
+    "@vendure/core": "^3.0.0",
+    "@vendure/payments-plugin": "^3.0.0",
+    "@vendure/testing": "^3.6.4",
+    "better-sqlite3": "^11.0.0",
+    "pg": "^8.22.0",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
+  }
+}

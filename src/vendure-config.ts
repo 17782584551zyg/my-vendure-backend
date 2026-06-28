@@ -1,0 +1,142 @@
+import {
+  DefaultLogger,
+  DefaultJobQueuePlugin,
+  DefaultSearchPlugin,
+  DefaultSchedulerPlugin,
+  LogLevel,
+  VendureConfig,
+  PaymentMethodHandler,
+  PaymentMethodEligibilityChecker,
+  ShippingEligibilityChecker,
+  ShippingCalculator,
+  LanguageCode,
+  Asset,
+} from '@vendure/core';
+import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
+import { AssetServerPlugin } from '@vendure/asset-server-plugin';
+import path from 'path';
+
+const isProduction = process.env.NODE_ENV === 'production';
+const databaseUrl = process.env.DATABASE_URL;
+
+const dummyPaymentHandler = new PaymentMethodHandler({
+  code: 'dummy-payment-handler',
+  description: [{
+    languageCode: LanguageCode.en,
+    value: 'Dummy Payment Handler',
+  }],
+  args: {},
+  createPayment: async (ctx, order, amount, args, metadata) => {
+    return {
+      amount: order.total,
+      state: 'Settled' as const,
+      transactionId: 'dummy-' + Date.now(),
+    };
+  },
+  settlePayment: async (ctx, order, payment, args) => {
+    return { success: true };
+  },
+});
+
+const alwaysEligiblePaymentChecker = new PaymentMethodEligibilityChecker({
+  code: 'always-eligible-payment-checker',
+  description: [{
+    languageCode: LanguageCode.en,
+    value: 'Always Eligible Payment Checker',
+  }],
+  args: {},
+  check: async (ctx, order, args) => {
+    return true;
+  },
+});
+
+const alwaysActiveChecker = new ShippingEligibilityChecker({
+  code: 'always-active-checker',
+  description: [{
+    languageCode: LanguageCode.en,
+    value: 'Always Active Checker',
+  }],
+  args: {},
+  check: async (ctx, order, args) => {
+    return true;
+  },
+});
+
+const flatRateCalculator = new ShippingCalculator({
+  code: 'flat-rate-calculator',
+  description: [{
+    languageCode: LanguageCode.en,
+    value: 'Flat Rate Calculator',
+  }],
+  args: {
+    rate: {
+      type: 'int',
+      label: [{ languageCode: LanguageCode.en, value: 'Shipping Rate' }],
+    },
+  },
+  calculate: async (ctx, order, args) => {
+    return {
+      price: args.rate,
+      priceWithTax: args.rate,
+      priceIncludesTax: false,
+      taxRate: 0,
+    };
+  },
+});
+
+export const config: VendureConfig = {
+  apiOptions: {
+    port: +(process.env.PORT || 3002),
+    adminApiPath: 'admin-api',
+    shopApiPath: 'shop-api',
+    cors: true,
+  },
+  authOptions: {
+    tokenMethod: 'bearer',
+    requireVerification: false,
+  },
+  dbConnectionOptions: databaseUrl
+    ? {
+        type: 'postgres',
+        url: databaseUrl,
+        synchronize: true,
+        logging: false,
+        ssl: isProduction ? { rejectUnauthorized: false } : false,
+      }
+    : {
+        type: 'better-sqlite3',
+        database: path.join(__dirname, '../vendure.sqlite'),
+        synchronize: true,
+        logging: false,
+      },
+  customFields: {
+    Product: [
+      { name: 'weight', type: 'string', label: [{ languageCode: LanguageCode.en, value: 'Weight' }] },
+      { name: 'specifications', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Specifications' }] },
+      { name: 'usage', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Usage Instructions' }] },
+      { name: 'detailImage', type: 'relation', entity: Asset, label: [{ languageCode: LanguageCode.en, value: 'Detail Image' }] },
+    ],
+  },
+  paymentOptions: {
+    paymentMethodHandlers: [dummyPaymentHandler],
+    paymentMethodEligibilityCheckers: [alwaysEligiblePaymentChecker],
+  },
+  shippingOptions: {
+    shippingEligibilityCheckers: [alwaysActiveChecker],
+    shippingCalculators: [flatRateCalculator],
+  },
+  logger: new DefaultLogger({ level: isProduction ? LogLevel.Info : LogLevel.Debug }),
+  plugins: [
+    DefaultJobQueuePlugin,
+    DefaultSchedulerPlugin,
+    DefaultSearchPlugin,
+    AssetServerPlugin.init({
+      route: 'assets',
+      assetUploadDir: path.join(__dirname, '../static/assets'),
+    }),
+    AdminUiPlugin.init({
+      port: +(process.env.PORT || 3002),
+      route: 'admin',
+    }),
+  ],
+};
