@@ -11,6 +11,11 @@ import {
   ShippingCalculator,
   LanguageCode,
   Asset,
+  TaxZoneStrategy,
+  RequestContext,
+  Channel,
+  Order,
+  Zone,
 } from '@vendure/core';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
@@ -84,6 +89,18 @@ const flatRateCalculator = new ShippingCalculator({
   },
 });
 
+class FallbackTaxZoneStrategy implements TaxZoneStrategy {
+  determineTaxZone(ctx: RequestContext, zones: Zone[], channel: Channel, order?: Order): Zone | undefined {
+    if (channel.defaultTaxZone) {
+      return channel.defaultTaxZone;
+    }
+    if (zones.length > 0) {
+      return zones[0];
+    }
+    return undefined;
+  }
+}
+
 export const config: VendureConfig = {
   apiOptions: {
     port: +(process.env.PORT || 3002),
@@ -124,6 +141,9 @@ export const config: VendureConfig = {
   shippingOptions: {
     shippingEligibilityCheckers: [alwaysActiveChecker],
     shippingCalculators: [flatRateCalculator],
+  },
+  taxOptions: {
+    taxZoneStrategy: new FallbackTaxZoneStrategy(),
   },
   logger: new DefaultLogger({ level: isProduction ? LogLevel.Info : LogLevel.Debug }),
   plugins: [
