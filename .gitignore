@@ -23,5 +23,5 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Static assets (generated)
-static/assets/
+# Static assets - keep these as they contain product images
+# static/assets/
