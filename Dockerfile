@@ -1,12 +1,22 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production
+COPY package.json package-lock.json ./
+RUN npm ci
 
-COPY dist/ ./dist/
-COPY static/ ./static/
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/static ./static
 
 EXPOSE 3002
 
