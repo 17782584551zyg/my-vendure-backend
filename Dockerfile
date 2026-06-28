@@ -1,3 +1,4 @@
+# Build timestamp: 2026-06-28
 FROM node:20-alpine AS builder
 
 WORKDIR /app
