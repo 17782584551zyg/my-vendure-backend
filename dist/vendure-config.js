@@ -8,6 +8,7 @@ const core_1 = require("@vendure/core");
 const admin_ui_plugin_1 = require("@vendure/admin-ui-plugin");
 const asset_server_plugin_1 = require("@vendure/asset-server-plugin");
 const path_1 = __importDefault(require("path"));
+const default_zone_plugin_1 = require("./default-zone-plugin");
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
 const dummyPaymentHandler = new core_1.PaymentMethodHandler({
@@ -128,6 +129,7 @@ exports.config = {
     },
     logger: new core_1.DefaultLogger({ level: isProduction ? core_1.LogLevel.Info : core_1.LogLevel.Debug }),
     plugins: [
+        default_zone_plugin_1.DefaultZonePlugin,
         core_1.DefaultJobQueuePlugin,
         core_1.DefaultSchedulerPlugin,
         core_1.DefaultSearchPlugin,

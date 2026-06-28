@@ -1,1 +1,1 @@
-{"version":3,"file":"vendure-config.d.ts","sourceRoot":"","sources":["../src/vendure-config.ts"],"names":[],"mappings":"AAAA,OAAO,EAML,aAAa,EAYd,MAAM,eAAe,CAAC;AAqFvB,eAAO,MAAM,MAAM,EAAE,aA0DpB,CAAC"}
+{"version":3,"file":"vendure-config.d.ts","sourceRoot":"","sources":["../src/vendure-config.ts"],"names":[],"mappings":"AAAA,OAAO,EAML,aAAa,EAYd,MAAM,eAAe,CAAC;AAsFvB,eAAO,MAAM,MAAM,EAAE,aA2DpB,CAAC"}

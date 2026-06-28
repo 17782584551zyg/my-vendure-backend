@@ -20,6 +20,7 @@ import {
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import path from 'path';
+import { DefaultZonePlugin } from './default-zone-plugin';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
@@ -147,6 +148,7 @@ export const config: VendureConfig = {
   },
   logger: new DefaultLogger({ level: isProduction ? LogLevel.Info : LogLevel.Debug }),
   plugins: [
+    DefaultZonePlugin,
     DefaultJobQueuePlugin,
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
