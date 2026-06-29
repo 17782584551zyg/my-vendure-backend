@@ -1,9 +1,9 @@
-import { OrderService, PaymentService, ChannelService } from '@vendure/core';
+import { PaymentService, ChannelService, TransactionalConnection } from '@vendure/core';
 export declare class PayPalReturnController {
-    private orderService;
+    private connection;
     private paymentService;
     private channelService;
-    constructor(orderService: OrderService, paymentService: PaymentService, channelService: ChannelService);
+    constructor(connection: TransactionalConnection, paymentService: PaymentService, channelService: ChannelService);
     handlePayPalReturn(req: any, token: string, payerId: string, orderCode: string): Promise<{
         url: string;
     }>;

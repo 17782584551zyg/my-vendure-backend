@@ -1,10 +1,10 @@
 import { Controller, Get, Query, Redirect, Req } from '@nestjs/common';
-import { PluginCommonModule, VendurePlugin, Logger, RequestContext, OrderService, PaymentService, ChannelService } from '@vendure/core';
+import { PluginCommonModule, VendurePlugin, Logger, RequestContext, PaymentService, ChannelService, TransactionalConnection, Order, Channel } from '@vendure/core';
 
 @Controller()
 export class PayPalReturnController {
   constructor(
-    private orderService: OrderService,
+    private connection: TransactionalConnection,
     private paymentService: PaymentService,
     private channelService: ChannelService,
   ) {}
@@ -12,14 +12,17 @@ export class PayPalReturnController {
   @Get('paypal-return')
   @Redirect()
   async handlePayPalReturn(@Req() req: any, @Query('token') token: string, @Query('PayerID') payerId: string, @Query('orderCode') orderCode: string) {
+    const storefrontUrl = process.env.STOREFRONT_URL || 'https://storefront-5qkr.onrailway.app';
+    const backendUrl = process.env.BACKEND_URL || 'https://vendure-backend-8k3h.onrailway.app';
+    
     Logger.info('[PayPal Return] Full URL: ' + req.protocol + '://' + req.get('host') + req.originalUrl);
     Logger.info('[PayPal Return] All query params: ' + JSON.stringify(req.query));
-    Logger.info('[PayPal Return] STOREFRONT_URL env: ' + (process.env.STOREFRONT_URL || 'NOT SET'));
-    Logger.info('[PayPal Return] BACKEND_URL env: ' + (process.env.BACKEND_URL || 'NOT SET'));
+    Logger.info('[PayPal Return] STOREFRONT_URL: ' + storefrontUrl);
+    Logger.info('[PayPal Return] BACKEND_URL: ' + backendUrl);
     
     if (!token || !orderCode) {
       Logger.error('[PayPal Return] Missing token or orderCode. Token: ' + (token ? 'present' : 'MISSING') + ', orderCode: ' + (orderCode ? 'present' : 'MISSING'));
-      return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=missing_params` };
+      return { url: `${storefrontUrl}/checkout/payment?error=missing_params` };
     }
 
     try {
@@ -27,7 +30,7 @@ export class PayPalReturnController {
       Logger.info('[PayPal Return] Default channel: ' + defaultChannel.code);
       
       const ctx = new RequestContext({
-        apiType: 'shop',
+        apiType: 'admin',
         channel: defaultChannel,
         isAuthorized: true,
         authorizedAsOwnerOnly: false,
@@ -35,25 +38,21 @@ export class PayPalReturnController {
 
       Logger.info('[PayPal Return] Querying order with code: ' + orderCode);
       
-      const order = await this.orderService.findOneByCode(ctx, orderCode);
+      const order = await this.connection.getRepository(ctx, Order).findOne({
+        where: { code: orderCode },
+        relations: ['payments'],
+      });
       
       if (!order) {
         Logger.error('[PayPal Return] Order NOT FOUND with code: ' + orderCode);
         
-        try {
-          const ctxAdmin = new RequestContext({
-            apiType: 'admin',
-            channel: defaultChannel,
-            isAuthorized: true,
-            authorizedAsOwnerOnly: false,
-          });
-          const orderAdmin = await this.orderService.findOneByCode(ctxAdmin, orderCode);
-          Logger.error('[PayPal Return] Order search with admin context: ' + (orderAdmin ? 'FOUND' : 'NOT FOUND'));
-        } catch (adminError) {
-          Logger.error('[PayPal Return] Admin context search error: ' + String(adminError));
-        }
+        const allOrders = await this.connection.getRepository(ctx, Order).find({
+          take: 5,
+          select: ['code'],
+        });
+        Logger.error('[PayPal Return] Available orders: ' + JSON.stringify(allOrders));
         
-        return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=order_not_found` };
+        return { url: `${storefrontUrl}/checkout/payment?error=order_not_found` };
       }
 
       Logger.info('[PayPal Return] Found order: code=' + order.code + ', state=' + order.state + ', id=' + order.id);
@@ -62,14 +61,14 @@ export class PayPalReturnController {
       
       if (!lastPayment) {
         Logger.error('[PayPal Return] Payment not found');
-        return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=payment_not_found` };
+        return { url: `${storefrontUrl}/checkout/payment?error=payment_not_found` };
       }
 
       Logger.info('[PayPal Return] Payment state=' + lastPayment.state + ', id=' + lastPayment.id);
 
       if (lastPayment.state === 'Settled') {
         Logger.info('[PayPal Return] Payment already settled');
-        return { url: `${process.env.STOREFRONT_URL || ''}/checkout/confirmation/${order.code}` };
+        return { url: `${storefrontUrl}/checkout/confirmation/${order.code}` };
       }
 
       if (lastPayment.state === 'Authorized') {
@@ -83,19 +82,19 @@ export class PayPalReturnController {
         if ('state' in settleResult && settleResult.state === 'Settled') {
           Logger.info('[PayPal Return] Payment settled successfully');
           
-          return { url: `${process.env.STOREFRONT_URL || ''}/checkout/confirmation/${order.code}` };
+          return { url: `${storefrontUrl}/checkout/confirmation/${order.code}` };
         } else {
           Logger.error('[PayPal Return] Payment settlement failed');
-          return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=settle_failed` };
+          return { url: `${storefrontUrl}/checkout/payment?error=settle_failed` };
         }
       } else {
         Logger.error('[PayPal Return] Payment is not Authorized: ' + lastPayment.state);
-        return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=wrong_state` };
+        return { url: `${storefrontUrl}/checkout/payment?error=wrong_state` };
       }
     } catch (error) {
       Logger.error('[PayPal Return] Unexpected error: ' + String(error));
       Logger.error('[PayPal Return] Error stack: ' + (error as Error).stack);
-      return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=server_error` };
+      return { url: `${storefrontUrl}/checkout/payment?error=server_error` };
     }
   }
 }
