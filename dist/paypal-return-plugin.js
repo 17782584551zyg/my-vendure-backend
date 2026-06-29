@@ -19,12 +19,17 @@ let PayPalReturnController = class PayPalReturnController {
     async handlePayPalReturn(token, payerId, orderCode) {
         core_1.Logger.info('[PayPal Return] Received callback: token=' + token + ', PayerID=' + payerId + ', orderCode=' + orderCode);
         if (!token || !orderCode) {
-            core_1.Logger.error('[PayPal Return] Missing token or orderCode');
+            core_1.Logger.error('[PayPal Return] Missing token or orderCode. Token:', token ? 'present' : 'MISSING', ', orderCode:', orderCode ? 'present' : 'MISSING');
             return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=missing_params` };
         }
         try {
             const adminApiUrl = `${process.env.BACKEND_URL || 'http://localhost:3002'}/admin-api`;
             const adminToken = process.env.ADMIN_API_TOKEN || '';
+            if (!adminToken) {
+                core_1.Logger.error('[PayPal Return] ADMIN_API_TOKEN is not configured!');
+                return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=admin_token_missing` };
+            }
+            core_1.Logger.info('[PayPal Return] Querying order with code:', orderCode);
             const orderQuery = await fetch(adminApiUrl, {
                 method: 'POST',
                 headers: {
@@ -50,8 +55,9 @@ let PayPalReturnController = class PayPalReturnController {
                 }),
             });
             const orderData = (await orderQuery.json());
+            core_1.Logger.info('[PayPal Return] Order query response:', JSON.stringify(orderData, null, 2));
             if (!orderData.data?.order) {
-                core_1.Logger.error('[PayPal Return] Order not found:', orderCode);
+                core_1.Logger.error('[PayPal Return] Order not found. Query response:', JSON.stringify(orderData));
                 return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=order_not_found` };
             }
             const order = orderData.data.order;
