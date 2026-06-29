@@ -99,7 +99,6 @@ exports.PayPalReturnPlugin = PayPalReturnPlugin = __decorate([
     (0, core_1.VendurePlugin)({
         imports: [core_1.PluginCommonModule],
         controllers: [PayPalReturnController],
-        providers: [core_1.OrderService, core_1.PaymentService, core_1.ChannelService],
     })
 ], PayPalReturnPlugin);
 //# sourceMappingURL=paypal-return-plugin.js.map

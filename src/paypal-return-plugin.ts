@@ -81,7 +81,6 @@ export class PayPalReturnController {
 @VendurePlugin({
   imports: [PluginCommonModule],
   controllers: [PayPalReturnController],
-  providers: [OrderService, PaymentService, ChannelService],
 })
 export class PayPalReturnPlugin {
 }
