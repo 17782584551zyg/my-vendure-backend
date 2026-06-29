@@ -26,25 +26,6 @@ import { paypalPaymentHandler } from './paypal-payment-handler';
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
 
-const dummyPaymentHandler = new PaymentMethodHandler({
-  code: 'dummy-payment-handler',
-  description: [{
-    languageCode: LanguageCode.en,
-    value: 'Dummy Payment Handler',
-  }],
-  args: {},
-  createPayment: async (ctx, order, amount, args, metadata) => {
-    return {
-      amount: order.total,
-      state: 'Settled' as const,
-      transactionId: 'dummy-' + Date.now(),
-    };
-  },
-  settlePayment: async (ctx, order, payment, args) => {
-    return { success: true };
-  },
-});
-
 const alwaysEligiblePaymentChecker = new PaymentMethodEligibilityChecker({
   code: 'always-eligible-payment-checker',
   description: [{
@@ -137,7 +118,7 @@ export const config: VendureConfig = {
     ],
   },
   paymentOptions: {
-    paymentMethodHandlers: [dummyPaymentHandler, paypalPaymentHandler],
+    paymentMethodHandlers: [paypalPaymentHandler],
     paymentMethodEligibilityCheckers: [alwaysEligiblePaymentChecker],
   },
   shippingOptions: {

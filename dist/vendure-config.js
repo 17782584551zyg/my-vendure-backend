@@ -12,24 +12,6 @@ const default_zone_plugin_1 = require("./default-zone-plugin");
 const paypal_payment_handler_1 = require("./paypal-payment-handler");
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
-const dummyPaymentHandler = new core_1.PaymentMethodHandler({
-    code: 'dummy-payment-handler',
-    description: [{
-            languageCode: core_1.LanguageCode.en,
-            value: 'Dummy Payment Handler',
-        }],
-    args: {},
-    createPayment: async (ctx, order, amount, args, metadata) => {
-        return {
-            amount: order.total,
-            state: 'Settled',
-            transactionId: 'dummy-' + Date.now(),
-        };
-    },
-    settlePayment: async (ctx, order, payment, args) => {
-        return { success: true };
-    },
-});
 const alwaysEligiblePaymentChecker = new core_1.PaymentMethodEligibilityChecker({
     code: 'always-eligible-payment-checker',
     description: [{
@@ -118,7 +100,7 @@ exports.config = {
         ],
     },
     paymentOptions: {
-        paymentMethodHandlers: [dummyPaymentHandler, paypal_payment_handler_1.paypalPaymentHandler],
+        paymentMethodHandlers: [paypal_payment_handler_1.paypalPaymentHandler],
         paymentMethodEligibilityCheckers: [alwaysEligiblePaymentChecker],
     },
     shippingOptions: {
