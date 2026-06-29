@@ -13,9 +13,9 @@ async function start() {
   const jobQueueService = app.get(JobQueueService);
   jobQueueService.start();
 
-  const httpAdapter = app.getHttpAdapter();
+  const expressApp = app.getHttpAdapter().getInstance();
   
-  httpAdapter.get('/paypal/return', async (req: any, res: any) => {
+  expressApp.get('/paypal/return', async (req: any, res: any) => {
     const token = req.query.token;
     const orderCode = req.query.orderCode;
     

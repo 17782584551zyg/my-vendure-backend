@@ -6,8 +6,8 @@ async function start() {
     const app = await (0, core_1.bootstrap)(vendure_config_1.config);
     const jobQueueService = app.get(core_1.JobQueueService);
     jobQueueService.start();
-    const httpAdapter = app.getHttpAdapter();
-    httpAdapter.get('/paypal/return', async (req, res) => {
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.get('/paypal/return', async (req, res) => {
         const token = req.query.token;
         const orderCode = req.query.orderCode;
         console.log('[PayPal Return] Received:', { token, orderCode });
