@@ -32,6 +32,8 @@ let PayPalReturnController = class PayPalReturnController {
             const ctx = new core_1.RequestContext({
                 apiType: 'admin',
                 channel: defaultChannel,
+                isAuthorized: true,
+                authorizedAsOwnerOnly: false,
             });
             core_1.Logger.info('[PayPal Return] Querying order with code: ' + orderCode);
             const order = await this.orderService.findOneByCode(ctx, orderCode);

@@ -25,6 +25,8 @@ export class PayPalReturnController {
       const ctx = new RequestContext({
         apiType: 'admin',
         channel: defaultChannel,
+        isAuthorized: true,
+        authorizedAsOwnerOnly: false,
       });
 
       Logger.info('[PayPal Return] Querying order with code: ' + orderCode);
