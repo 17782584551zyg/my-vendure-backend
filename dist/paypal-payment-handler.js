@@ -79,6 +79,9 @@ const paypalPaymentHandler = new core_1.PaymentMethodHandler({
             const orderData = await orderResponse.json();
             console.log('[PayPal] Order response status:', orderResponse.status);
             console.log('[PayPal] Order data:', JSON.stringify(orderData, null, 2));
+            const returnUrl = `${process.env.BACKEND_URL || 'http://localhost:3002'}/paypal-return?orderCode=${order.code}`;
+            console.log('[PayPal] RETURN URL sent to PayPal:', returnUrl);
+            console.log('[PayPal] BACKEND_URL env:', process.env.BACKEND_URL || 'NOT SET');
             if (orderResponse.ok && orderData.id) {
                 const approvalUrl = orderData.links?.find((link) => link.rel === 'approve')?.href;
                 console.log('[PayPal] Approval URL:', approvalUrl);
