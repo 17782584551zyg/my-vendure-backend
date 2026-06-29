@@ -18,8 +18,23 @@ const paypalPaymentHandler = new core_1.PaymentMethodHandler({
             const clientId = args.clientId || '';
             const clientSecret = args.clientSecret || '';
             const environment = args.environment || 'sandbox';
+            console.log('[PayPal] createPayment started');
+            console.log('[PayPal] clientId:', clientId ? 'provided' : 'MISSING');
+            console.log('[PayPal] clientSecret:', clientSecret ? 'provided' : 'MISSING');
+            console.log('[PayPal] environment:', environment);
+            console.log('[PayPal] order amount:', amount, 'currency:', order.currencyCode);
+            if (!clientId || !clientSecret) {
+                console.error('[PayPal] Missing credentials');
+                return {
+                    amount,
+                    state: 'Declined',
+                    transactionId: '',
+                    errorMessage: 'PayPal credentials not configured. Please set Client ID and Secret in Admin UI.',
+                };
+            }
             const apiUrl = environment === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
             const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+            console.log('[PayPal] Requesting access token from:', apiUrl);
             const tokenResponse = await fetch(`${apiUrl}/v1/oauth2/token`, {
                 method: 'POST',
                 headers: {
@@ -29,7 +44,18 @@ const paypalPaymentHandler = new core_1.PaymentMethodHandler({
                 body: 'grant_type=client_credentials',
             });
             const tokenData = await tokenResponse.json();
+            console.log('[PayPal] Token response status:', tokenResponse.status);
+            if (!tokenResponse.ok) {
+                console.error('[PayPal] Token request failed:', tokenData);
+                return {
+                    amount,
+                    state: 'Declined',
+                    transactionId: '',
+                    errorMessage: `PayPal auth failed: ${tokenData.error_description || 'Invalid credentials'}`,
+                };
+            }
             const accessToken = tokenData.access_token;
+            console.log('[PayPal] Access token obtained');
             const orderResponse = await fetch(`${apiUrl}/v2/checkout/orders`, {
                 method: 'POST',
                 headers: {
@@ -51,35 +77,37 @@ const paypalPaymentHandler = new core_1.PaymentMethodHandler({
                 }),
             });
             const orderData = await orderResponse.json();
-            if (orderData.id) {
+            console.log('[PayPal] Order response status:', orderResponse.status);
+            console.log('[PayPal] Order data:', JSON.stringify(orderData, null, 2));
+            if (orderResponse.ok && orderData.id) {
                 const approvalUrl = orderData.links?.find((link) => link.rel === 'approve')?.href;
+                console.log('[PayPal] Approval URL:', approvalUrl);
                 return {
                     amount,
                     state: 'Authorized',
                     transactionId: orderData.id,
                     metadata: {
-                        approvalUrl,
+                        public: {
+                            approvalUrl,
+                        },
                     },
                 };
             }
+            console.error('[PayPal] Order creation failed:', orderData);
             return {
                 amount,
                 state: 'Declined',
                 transactionId: '',
-                metadata: {
-                    error: orderData.message || 'PayPal payment creation failed',
-                },
+                errorMessage: `PayPal error: ${orderData.message || orderData.error_message || 'Payment creation failed'}`,
             };
         }
         catch (error) {
-            console.error('PayPal createPayment error:', error);
+            console.error('[PayPal] createPayment error:', error);
             return {
                 amount,
                 state: 'Declined',
                 transactionId: '',
-                metadata: {
-                    error: error.message || 'Payment creation error',
-                },
+                errorMessage: `PayPal error: ${error.message || 'Payment creation error'}`,
             };
         }
     },
