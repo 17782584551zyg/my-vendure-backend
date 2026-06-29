@@ -22,12 +22,12 @@ let PayPalReturnController = class PayPalReturnController {
         this.channelService = channelService;
     }
     async handlePayPalReturn(req, token, payerId, orderCode) {
-        const storefrontUrl = process.env.STOREFRONT_URL || 'https://storefront-5qkr.onrailway.app';
-        const backendUrl = process.env.BACKEND_URL || 'https://vendure-backend-8k3h.onrailway.app';
+        const storefrontUrl = process.env.STOREFRONT_URL || '';
+        const backendUrl = process.env.BACKEND_URL || '';
         core_1.Logger.info('[PayPal Return] Full URL: ' + req.protocol + '://' + req.get('host') + req.originalUrl);
         core_1.Logger.info('[PayPal Return] All query params: ' + JSON.stringify(req.query));
-        core_1.Logger.info('[PayPal Return] STOREFRONT_URL: ' + storefrontUrl);
-        core_1.Logger.info('[PayPal Return] BACKEND_URL: ' + backendUrl);
+        core_1.Logger.info('[PayPal Return] STOREFRONT_URL env: ' + (process.env.STOREFRONT_URL || 'NOT SET - PLEASE CONFIGURE IN RAILWAY'));
+        core_1.Logger.info('[PayPal Return] BACKEND_URL env: ' + (process.env.BACKEND_URL || 'NOT SET - PLEASE CONFIGURE IN RAILWAY'));
         if (!token || !orderCode) {
             core_1.Logger.error('[PayPal Return] Missing token or orderCode. Token: ' + (token ? 'present' : 'MISSING') + ', orderCode: ' + (orderCode ? 'present' : 'MISSING'));
             return { url: `${storefrontUrl}/checkout/payment?error=missing_params` };
