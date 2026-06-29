@@ -6,8 +6,8 @@ async function start() {
     const app = await (0, core_1.bootstrap)(vendure_config_1.config);
     const jobQueueService = app.get(core_1.JobQueueService);
     jobQueueService.start();
-    const orderService = app.get('OrderService');
-    const paymentService = app.get('PaymentService');
+    const orderService = app.get(core_1.OrderService);
+    const paymentService = app.get(core_1.PaymentService);
     (0, vendure_config_1.initPayPalServices)(orderService, paymentService);
     console.log('');
     console.log('Vendure server is now running!');

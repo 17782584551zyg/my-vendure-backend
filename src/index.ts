@@ -1,4 +1,4 @@
-import { bootstrap, JobQueueService } from '@vendure/core';
+import { bootstrap, JobQueueService, OrderService, PaymentService } from '@vendure/core';
 import { config, initPayPalServices } from './vendure-config';
 
 async function start() {
@@ -7,8 +7,8 @@ async function start() {
   const jobQueueService = app.get(JobQueueService);
   jobQueueService.start();
   
-  const orderService = app.get('OrderService');
-  const paymentService = app.get('PaymentService');
+  const orderService = app.get(OrderService);
+  const paymentService = app.get(PaymentService);
   initPayPalServices(orderService, paymentService);
   
   console.log('');
