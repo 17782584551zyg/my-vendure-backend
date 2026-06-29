@@ -71,7 +71,7 @@ const paypalPaymentHandler = new core_1.PaymentMethodHandler({
                             },
                         }],
                     application_context: {
-                        return_url: `${process.env.STOREFRONT_URL || ''}/paypal-return?orderCode=${order.code}`,
+                        return_url: `${process.env.BACKEND_URL || 'http://localhost:3002'}/paypal-return?orderCode=${order.code}`,
                         cancel_url: `${process.env.STOREFRONT_URL || ''}/checkout/payment`,
                     },
                 }),
