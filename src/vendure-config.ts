@@ -21,6 +21,7 @@ import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import path from 'path';
 import { DefaultZonePlugin } from './default-zone-plugin';
+import { paypalPaymentHandler } from './paypal-payment-handler';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
@@ -136,7 +137,7 @@ export const config: VendureConfig = {
     ],
   },
   paymentOptions: {
-    paymentMethodHandlers: [dummyPaymentHandler],
+    paymentMethodHandlers: [dummyPaymentHandler, paypalPaymentHandler],
     paymentMethodEligibilityCheckers: [alwaysEligiblePaymentChecker],
   },
   shippingOptions: {
