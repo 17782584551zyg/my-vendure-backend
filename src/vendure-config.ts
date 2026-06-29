@@ -18,10 +18,9 @@ import {
 } from '@vendure/core';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
-import { BraintreePlugin } from '@vendure/payments-plugin/package/braintree';
-import { Environment } from 'braintree';
 import path from 'path';
 import { DefaultZonePlugin } from './default-zone-plugin';
+import { paypalPaymentHandler } from './paypal-payment-handler';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
@@ -118,7 +117,7 @@ export const config: VendureConfig = {
     ],
   },
   paymentOptions: {
-    paymentMethodHandlers: [],
+    paymentMethodHandlers: [paypalPaymentHandler],
     paymentMethodEligibilityCheckers: [alwaysEligiblePaymentChecker],
   },
   shippingOptions: {
@@ -137,10 +136,6 @@ export const config: VendureConfig = {
     AssetServerPlugin.init({
       route: 'assets',
       assetUploadDir: path.join(__dirname, '../static/assets'),
-    }),
-    BraintreePlugin.init({
-      environment: isProduction ? Environment.Production : Environment.Sandbox,
-      storeCustomersInBraintree: false,
     }),
     AdminUiPlugin.init({
       port: +(process.env.PORT || 3002),
