@@ -84,8 +84,8 @@ const paypalPaymentHandler = new PaymentMethodHandler({
             },
           }],
           application_context: {
-            return_url: `${process.env.VENDURE_API_URL || ''}/paypal-return`,
-            cancel_url: `${process.env.VENDURE_API_URL || ''}/paypal-cancel`,
+            return_url: `${process.env.STOREFRONT_URL || ''}/paypal-return`,
+            cancel_url: `${process.env.STOREFRONT_URL || ''}/checkout/payment`,
           },
         }),
       });
