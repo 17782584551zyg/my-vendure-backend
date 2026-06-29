@@ -16,11 +16,13 @@
     "@vendure/payments-plugin": "^3.5.6",
     "@vendure/testing": "^3.6.4",
     "better-sqlite3": "^11.0.0",
+    "braintree": "^3.38.0",
     "pg": "^8.22.0",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
+    "@types/braintree": "^3.4.4",
     "@types/node": "^20.0.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.0.0"

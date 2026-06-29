@@ -7,9 +7,10 @@ exports.config = void 0;
 const core_1 = require("@vendure/core");
 const admin_ui_plugin_1 = require("@vendure/admin-ui-plugin");
 const asset_server_plugin_1 = require("@vendure/asset-server-plugin");
+const braintree_1 = require("@vendure/payments-plugin/package/braintree");
+const braintree_2 = require("braintree");
 const path_1 = __importDefault(require("path"));
 const default_zone_plugin_1 = require("./default-zone-plugin");
-const paypal_payment_handler_1 = require("./paypal-payment-handler");
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
 const alwaysEligiblePaymentChecker = new core_1.PaymentMethodEligibilityChecker({
@@ -100,7 +101,7 @@ exports.config = {
         ],
     },
     paymentOptions: {
-        paymentMethodHandlers: [paypal_payment_handler_1.paypalPaymentHandler],
+        paymentMethodHandlers: [],
         paymentMethodEligibilityCheckers: [alwaysEligiblePaymentChecker],
     },
     shippingOptions: {
@@ -119,6 +120,10 @@ exports.config = {
         asset_server_plugin_1.AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path_1.default.join(__dirname, '../static/assets'),
+        }),
+        braintree_1.BraintreePlugin.init({
+            environment: isProduction ? braintree_2.Environment.Production : braintree_2.Environment.Sandbox,
+            storeCustomersInBraintree: false,
         }),
         admin_ui_plugin_1.AdminUiPlugin.init({
             port: +(process.env.PORT || 3002),
