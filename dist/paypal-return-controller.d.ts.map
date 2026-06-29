@@ -1,0 +1,1 @@
+{"version":3,"file":"paypal-return-controller.d.ts","sourceRoot":"","sources":["../src/paypal-return-controller.ts"],"names":[],"mappings":"AACA,OAAO,EAAkB,YAAY,EAAE,cAAc,EAAgB,MAAM,eAAe,CAAC;AAQ3F,qBACa,sBAAsB;IAE/B,OAAO,CAAC,QAAQ,CAAC,YAAY;IAC7B,OAAO,CAAC,QAAQ,CAAC,cAAc;gBADd,YAAY,EAAE,YAAY,EAC1B,cAAc,EAAE,cAAc;IAK3C,YAAY,CAAiB,KAAK,EAAE,MAAM,EAAsB,SAAS,EAAE,MAAM;;;CAiGxF"}
