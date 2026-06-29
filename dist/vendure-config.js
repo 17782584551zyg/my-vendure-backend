@@ -10,6 +10,7 @@ const asset_server_plugin_1 = require("@vendure/asset-server-plugin");
 const path_1 = __importDefault(require("path"));
 const default_zone_plugin_1 = require("./default-zone-plugin");
 const paypal_payment_handler_1 = require("./paypal-payment-handler");
+const paypal_return_plugin_1 = require("./paypal-return-plugin");
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
 const alwaysEligiblePaymentChecker = new core_1.PaymentMethodEligibilityChecker({
@@ -124,6 +125,7 @@ exports.config = {
             port: +(process.env.PORT || 3002),
             route: 'admin',
         }),
+        paypal_return_plugin_1.PayPalReturnPlugin,
     ],
 };
 //# sourceMappingURL=vendure-config.js.map

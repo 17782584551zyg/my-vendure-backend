@@ -21,6 +21,7 @@ import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import path from 'path';
 import { DefaultZonePlugin } from './default-zone-plugin';
 import { paypalPaymentHandler } from './paypal-payment-handler';
+import { PayPalReturnPlugin } from './paypal-return-plugin';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
@@ -141,5 +142,6 @@ export const config: VendureConfig = {
       port: +(process.env.PORT || 3002),
       route: 'admin',
     }),
+    PayPalReturnPlugin,
   ],
 };

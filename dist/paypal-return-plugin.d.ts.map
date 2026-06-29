@@ -1,1 +1,1 @@
-{"version":3,"file":"paypal-return-plugin.d.ts","sourceRoot":"","sources":["../src/paypal-return-plugin.ts"],"names":[],"mappings":"AAAA,OAAO,EAA6C,sBAAsB,EAAE,MAAM,eAAe,CAAC;AAElG,qBAGa,kBAAmB,YAAW,sBAAsB;IACzD,sBAAsB;CA2J7B"}
+{"version":3,"file":"paypal-return-plugin.d.ts","sourceRoot":"","sources":["../src/paypal-return-plugin.ts"],"names":[],"mappings":"AAGA,qBACa,sBAAsB;IAG3B,kBAAkB,CAAiB,KAAK,EAAE,MAAM,EAAoB,OAAO,EAAE,MAAM,EAAsB,SAAS,EAAE,MAAM;;;CA6IjI;AAED,qBAIa,kBAAkB;CAC9B"}
