@@ -9,7 +9,7 @@ export class PayPalReturnController {
     Logger.info('[PayPal Return] Received callback: token=' + token + ', PayerID=' + payerId + ', orderCode=' + orderCode);
     
     if (!token || !orderCode) {
-      Logger.error('[PayPal Return] Missing token or orderCode. Token:', token ? 'present' : 'MISSING', ', orderCode:', orderCode ? 'present' : 'MISSING');
+      Logger.error('[PayPal Return] Missing token or orderCode. Token: ' + (token ? 'present' : 'MISSING') + ', orderCode: ' + (orderCode ? 'present' : 'MISSING'));
       return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=missing_params` };
     }
 

@@ -19,7 +19,7 @@ let PayPalReturnController = class PayPalReturnController {
     async handlePayPalReturn(token, payerId, orderCode) {
         core_1.Logger.info('[PayPal Return] Received callback: token=' + token + ', PayerID=' + payerId + ', orderCode=' + orderCode);
         if (!token || !orderCode) {
-            core_1.Logger.error('[PayPal Return] Missing token or orderCode. Token:', token ? 'present' : 'MISSING', ', orderCode:', orderCode ? 'present' : 'MISSING');
+            core_1.Logger.error('[PayPal Return] Missing token or orderCode. Token: ' + (token ? 'present' : 'MISSING') + ', orderCode: ' + (orderCode ? 'present' : 'MISSING'));
             return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=missing_params` };
         }
         try {
