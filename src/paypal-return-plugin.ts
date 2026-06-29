@@ -1,5 +1,5 @@
-import { Controller, Get, Query, Redirect } from '@nestjs/common';
-import { PluginCommonModule, VendurePlugin, Logger, RequestContext, OrderService, PaymentService, ChannelService, Injector } from '@vendure/core';
+import { Controller, Get, Query, Redirect, Req } from '@nestjs/common';
+import { PluginCommonModule, VendurePlugin, Logger, RequestContext, OrderService, PaymentService, ChannelService } from '@vendure/core';
 
 @Controller()
 export class PayPalReturnController {
@@ -11,8 +11,11 @@ export class PayPalReturnController {
 
   @Get('paypal-return')
   @Redirect()
-  async handlePayPalReturn(@Query('token') token: string, @Query('PayerID') payerId: string, @Query('orderCode') orderCode: string) {
-    Logger.info('[PayPal Return] Received callback: token=' + token + ', PayerID=' + payerId + ', orderCode=' + orderCode);
+  async handlePayPalReturn(@Req() req: any, @Query('token') token: string, @Query('PayerID') payerId: string, @Query('orderCode') orderCode: string) {
+    Logger.info('[PayPal Return] Full URL: ' + req.protocol + '://' + req.get('host') + req.originalUrl);
+    Logger.info('[PayPal Return] All query params: ' + JSON.stringify(req.query));
+    Logger.info('[PayPal Return] STOREFRONT_URL env: ' + (process.env.STOREFRONT_URL || 'NOT SET'));
+    Logger.info('[PayPal Return] BACKEND_URL env: ' + (process.env.BACKEND_URL || 'NOT SET'));
     
     if (!token || !orderCode) {
       Logger.error('[PayPal Return] Missing token or orderCode. Token: ' + (token ? 'present' : 'MISSING') + ', orderCode: ' + (orderCode ? 'present' : 'MISSING'));
@@ -21,9 +24,10 @@ export class PayPalReturnController {
 
     try {
       const defaultChannel = await this.channelService.getDefaultChannel();
+      Logger.info('[PayPal Return] Default channel: ' + defaultChannel.code);
       
       const ctx = new RequestContext({
-        apiType: 'admin',
+        apiType: 'shop',
         channel: defaultChannel,
         isAuthorized: true,
         authorizedAsOwnerOnly: false,
@@ -34,11 +38,25 @@ export class PayPalReturnController {
       const order = await this.orderService.findOneByCode(ctx, orderCode);
       
       if (!order) {
-        Logger.error('[PayPal Return] Order not found with code: ' + orderCode);
+        Logger.error('[PayPal Return] Order NOT FOUND with code: ' + orderCode);
+        
+        try {
+          const ctxAdmin = new RequestContext({
+            apiType: 'admin',
+            channel: defaultChannel,
+            isAuthorized: true,
+            authorizedAsOwnerOnly: false,
+          });
+          const orderAdmin = await this.orderService.findOneByCode(ctxAdmin, orderCode);
+          Logger.error('[PayPal Return] Order search with admin context: ' + (orderAdmin ? 'FOUND' : 'NOT FOUND'));
+        } catch (adminError) {
+          Logger.error('[PayPal Return] Admin context search error: ' + String(adminError));
+        }
+        
         return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=order_not_found` };
       }
 
-      Logger.info('[PayPal Return] Found order: code=' + order.code + ', state=' + order.state);
+      Logger.info('[PayPal Return] Found order: code=' + order.code + ', state=' + order.state + ', id=' + order.id);
 
       const lastPayment = order.payments?.[order.payments.length - 1];
       
@@ -59,6 +77,9 @@ export class PayPalReturnController {
 
         const settleResult = await this.paymentService.settlePayment(ctx, lastPayment.id);
         
+        Logger.info('[PayPal Return] Settle result type: ' + typeof settleResult);
+        Logger.info('[PayPal Return] Settle result: ' + JSON.stringify(settleResult));
+        
         if ('state' in settleResult && settleResult.state === 'Settled') {
           Logger.info('[PayPal Return] Payment settled successfully');
           
@@ -73,6 +94,7 @@ export class PayPalReturnController {
       }
     } catch (error) {
       Logger.error('[PayPal Return] Unexpected error: ' + String(error));
+      Logger.error('[PayPal Return] Error stack: ' + (error as Error).stack);
       return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=server_error` };
     }
   }

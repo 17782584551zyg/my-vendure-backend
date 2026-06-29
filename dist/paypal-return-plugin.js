@@ -21,16 +21,20 @@ let PayPalReturnController = class PayPalReturnController {
         this.paymentService = paymentService;
         this.channelService = channelService;
     }
-    async handlePayPalReturn(token, payerId, orderCode) {
-        core_1.Logger.info('[PayPal Return] Received callback: token=' + token + ', PayerID=' + payerId + ', orderCode=' + orderCode);
+    async handlePayPalReturn(req, token, payerId, orderCode) {
+        core_1.Logger.info('[PayPal Return] Full URL: ' + req.protocol + '://' + req.get('host') + req.originalUrl);
+        core_1.Logger.info('[PayPal Return] All query params: ' + JSON.stringify(req.query));
+        core_1.Logger.info('[PayPal Return] STOREFRONT_URL env: ' + (process.env.STOREFRONT_URL || 'NOT SET'));
+        core_1.Logger.info('[PayPal Return] BACKEND_URL env: ' + (process.env.BACKEND_URL || 'NOT SET'));
         if (!token || !orderCode) {
             core_1.Logger.error('[PayPal Return] Missing token or orderCode. Token: ' + (token ? 'present' : 'MISSING') + ', orderCode: ' + (orderCode ? 'present' : 'MISSING'));
             return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=missing_params` };
         }
         try {
             const defaultChannel = await this.channelService.getDefaultChannel();
+            core_1.Logger.info('[PayPal Return] Default channel: ' + defaultChannel.code);
             const ctx = new core_1.RequestContext({
-                apiType: 'admin',
+                apiType: 'shop',
                 channel: defaultChannel,
                 isAuthorized: true,
                 authorizedAsOwnerOnly: false,
@@ -38,10 +42,23 @@ let PayPalReturnController = class PayPalReturnController {
             core_1.Logger.info('[PayPal Return] Querying order with code: ' + orderCode);
             const order = await this.orderService.findOneByCode(ctx, orderCode);
             if (!order) {
-                core_1.Logger.error('[PayPal Return] Order not found with code: ' + orderCode);
+                core_1.Logger.error('[PayPal Return] Order NOT FOUND with code: ' + orderCode);
+                try {
+                    const ctxAdmin = new core_1.RequestContext({
+                        apiType: 'admin',
+                        channel: defaultChannel,
+                        isAuthorized: true,
+                        authorizedAsOwnerOnly: false,
+                    });
+                    const orderAdmin = await this.orderService.findOneByCode(ctxAdmin, orderCode);
+                    core_1.Logger.error('[PayPal Return] Order search with admin context: ' + (orderAdmin ? 'FOUND' : 'NOT FOUND'));
+                }
+                catch (adminError) {
+                    core_1.Logger.error('[PayPal Return] Admin context search error: ' + String(adminError));
+                }
                 return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=order_not_found` };
             }
-            core_1.Logger.info('[PayPal Return] Found order: code=' + order.code + ', state=' + order.state);
+            core_1.Logger.info('[PayPal Return] Found order: code=' + order.code + ', state=' + order.state + ', id=' + order.id);
             const lastPayment = order.payments?.[order.payments.length - 1];
             if (!lastPayment) {
                 core_1.Logger.error('[PayPal Return] Payment not found');
@@ -55,6 +72,8 @@ let PayPalReturnController = class PayPalReturnController {
             if (lastPayment.state === 'Authorized') {
                 core_1.Logger.info('[PayPal Return] Settling payment: ' + lastPayment.id);
                 const settleResult = await this.paymentService.settlePayment(ctx, lastPayment.id);
+                core_1.Logger.info('[PayPal Return] Settle result type: ' + typeof settleResult);
+                core_1.Logger.info('[PayPal Return] Settle result: ' + JSON.stringify(settleResult));
                 if ('state' in settleResult && settleResult.state === 'Settled') {
                     core_1.Logger.info('[PayPal Return] Payment settled successfully');
                     return { url: `${process.env.STOREFRONT_URL || ''}/checkout/confirmation/${order.code}` };
@@ -71,6 +90,7 @@ let PayPalReturnController = class PayPalReturnController {
         }
         catch (error) {
             core_1.Logger.error('[PayPal Return] Unexpected error: ' + String(error));
+            core_1.Logger.error('[PayPal Return] Error stack: ' + error.stack);
             return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=server_error` };
         }
     }
@@ -79,11 +99,12 @@ exports.PayPalReturnController = PayPalReturnController;
 __decorate([
     (0, common_1.Get)('paypal-return'),
     (0, common_1.Redirect)(),
-    __param(0, (0, common_1.Query)('token')),
-    __param(1, (0, common_1.Query)('PayerID')),
-    __param(2, (0, common_1.Query)('orderCode')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('token')),
+    __param(2, (0, common_1.Query)('PayerID')),
+    __param(3, (0, common_1.Query)('orderCode')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [Object, String, String, String]),
     __metadata("design:returntype", Promise)
 ], PayPalReturnController.prototype, "handlePayPalReturn", null);
 exports.PayPalReturnController = PayPalReturnController = __decorate([

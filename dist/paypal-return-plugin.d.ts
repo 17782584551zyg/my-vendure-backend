@@ -4,7 +4,7 @@ export declare class PayPalReturnController {
     private paymentService;
     private channelService;
     constructor(orderService: OrderService, paymentService: PaymentService, channelService: ChannelService);
-    handlePayPalReturn(token: string, payerId: string, orderCode: string): Promise<{
+    handlePayPalReturn(req: any, token: string, payerId: string, orderCode: string): Promise<{
         url: string;
     }>;
 }
