@@ -1,8 +1,14 @@
 import { Controller, Get, Query, Redirect } from '@nestjs/common';
-import { PluginCommonModule, VendurePlugin, Logger } from '@vendure/core';
+import { PluginCommonModule, VendurePlugin, Logger, RequestContext, OrderService, PaymentService, OrderStateMachine, Channel } from '@vendure/core';
 
 @Controller()
 export class PayPalReturnController {
+  constructor(
+    private orderService: OrderService,
+    private paymentService: PaymentService,
+    private orderStateMachine: OrderStateMachine,
+  ) {}
+
   @Get('paypal-return')
   @Redirect()
   async handlePayPalReturn(@Query('token') token: string, @Query('PayerID') payerId: string, @Query('orderCode') orderCode: string) {
@@ -14,51 +20,20 @@ export class PayPalReturnController {
     }
 
     try {
-      const adminApiUrl = `${process.env.BACKEND_URL || 'http://localhost:3002'}/admin-api`;
-      const adminToken = process.env.ADMIN_API_TOKEN || '';
-      
-      if (!adminToken) {
-        Logger.error('[PayPal Return] ADMIN_API_TOKEN is not configured!');
-        return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=admin_token_missing` };
-      }
-      
-      Logger.info('[PayPal Return] Querying order with code:', orderCode);
-      
-      const orderQuery = await fetch(adminApiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({
-          query: `
-            query GetOrder($code: String!) {
-              order(code: $code) {
-                id
-                code
-                state
-                payments {
-                  id
-                  state
-                  transactionId
-                }
-              }
-            }
-          `,
-          variables: { code: orderCode },
-        }),
+      const ctx = new RequestContext({
+        apiType: 'admin',
+        channelOrId: Channel.DEFAULT_CHANNEL,
       });
 
-      const orderData = (await orderQuery.json()) as any;
+      Logger.info('[PayPal Return] Querying order with code: ' + orderCode);
       
-      Logger.info('[PayPal Return] Order query response:', JSON.stringify(orderData, null, 2));
+      const order = await this.orderService.findOneByCode(ctx, orderCode);
       
-      if (!orderData.data?.order) {
-        Logger.error('[PayPal Return] Order not found. Query response:', JSON.stringify(orderData));
+      if (!order) {
+        Logger.error('[PayPal Return] Order not found with code: ' + orderCode);
         return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=order_not_found` };
       }
 
-      const order = orderData.data.order;
       Logger.info('[PayPal Return] Found order: code=' + order.code + ', state=' + order.state);
 
       const lastPayment = order.payments?.[order.payments.length - 1];
@@ -76,82 +51,33 @@ export class PayPalReturnController {
       }
 
       if (lastPayment.state === 'Authorized') {
-        Logger.info('[PayPal Return] Settling payment:', lastPayment.id);
+        Logger.info('[PayPal Return] Settling payment: ' + lastPayment.id);
 
-        const settleResponse = await fetch(adminApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminToken}`,
-          },
-          body: JSON.stringify({
-            query: `
-              mutation SettlePayment($id: ID!) {
-                settlePayment(id: $id) {
-                  ... on Payment {
-                    id
-                    state
-                  }
-                  ... on ErrorResult {
-                    message
-                  }
-                }
-              }
-            `,
-            variables: { id: lastPayment.id },
-          }),
-        });
+        const settledPayment = await this.paymentService.settlePayment(ctx, lastPayment.id);
+        
+        Logger.info('[PayPal Return] Settle result: ' + settledPayment.state);
 
-        const settleData = (await settleResponse.json()) as any;
-        Logger.info('[PayPal Return] Settle response:', JSON.stringify(settleData, null, 2));
-
-        if (settleData.data?.settlePayment?.__typename === 'Payment' && settleData.data.settlePayment.state === 'Settled') {
+        if (settledPayment.state === 'Settled') {
           Logger.info('[PayPal Return] Payment settled successfully');
 
-          const transitionResponse = await fetch(adminApiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminToken}`,
-            },
-            body: JSON.stringify({
-              query: `
-                mutation TransitionOrderToState($id: ID!, $state: String!) {
-                  transitionOrderToState(id: $id, state: $state) {
-                    ... on Order {
-                      id
-                      state
-                    }
-                    ... on OrderStateTransitionError {
-                      message
-                    }
-                  }
-                }
-              `,
-              variables: { id: order.id, state: 'PaymentSettled' },
-            }),
-          });
-
-          const transitionData = (await transitionResponse.json()) as any;
-          Logger.info('[PayPal Return] Transition response:', JSON.stringify(transitionData, null, 2));
-
-          if (transitionData.data?.transitionOrderToState?.__typename === 'Order') {
-            Logger.info('[PayPal Return] Order transitioned successfully');
-          } else {
-            Logger.warn('[PayPal Return] Order transition may have failed');
+          try {
+            await this.orderStateMachine.transitionToState(ctx, order.id, 'PaymentSettled');
+            Logger.info('[PayPal Return] Order transitioned to PaymentSettled');
+          } catch (transitionError) {
+            Logger.warn('[PayPal Return] Order transition failed: ' + String(transitionError));
           }
           
           return { url: `${process.env.STOREFRONT_URL || ''}/checkout/confirmation/${order.code}` };
         } else {
-          Logger.error('[PayPal Return] Payment settlement failed');
+          Logger.error('[PayPal Return] Payment settlement failed, state: ' + settledPayment.state);
           return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=settle_failed` };
         }
       } else {
-        Logger.error('[PayPal Return] Payment is not Authorized:', lastPayment.state);
+        Logger.error('[PayPal Return] Payment is not Authorized: ' + lastPayment.state);
         return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=wrong_state` };
       }
     } catch (error) {
-      Logger.error('[PayPal Return] Unexpected error:', String(error));
+      Logger.error('[PayPal Return] Unexpected error: ' + String(error));
       return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=server_error` };
     }
   }
@@ -160,6 +86,7 @@ export class PayPalReturnController {
 @VendurePlugin({
   imports: [PluginCommonModule],
   controllers: [PayPalReturnController],
+  providers: [OrderService, PaymentService, OrderStateMachine],
 })
 export class PayPalReturnPlugin {
 }
