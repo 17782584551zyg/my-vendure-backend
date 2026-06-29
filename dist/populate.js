@@ -6,13 +6,33 @@ async function populateData() {
     console.log('Starting Vendure server to create initial data...');
     const app = await (0, core_1.bootstrap)(vendure_config_1.config);
     try {
-        // Get services from the app
+        const administratorService = app.get('AdministratorService');
         const channelService = app.get('ChannelService');
         const productService = app.get('ProductService');
         const stockLocationService = app.get('StockLocationService');
         const taxCategoryService = app.get('TaxCategoryService');
         const facetService = app.get('FacetService');
-        // Create default channel if needed
+        console.log('Creating superadmin user...');
+        try {
+            const existingAdmin = await administratorService.findOne({ emailAddress: 'superadmin' });
+            if (!existingAdmin) {
+                await administratorService.create({
+                    emailAddress: 'superadmin',
+                    identifier: 'superadmin',
+                    password: 'superadmin',
+                    firstName: 'Super',
+                    lastName: 'Admin',
+                    roles: ['superadmin'],
+                });
+                console.log('✅ Superadmin user created: superadmin / superadmin');
+            }
+            else {
+                console.log('ℹ️ Superadmin user already exists');
+            }
+        }
+        catch (adminError) {
+            console.error('Error creating superadmin:', adminError.message);
+        }
         console.log('Setting up channel...');
         // Create tax category
         console.log('Creating tax category...');

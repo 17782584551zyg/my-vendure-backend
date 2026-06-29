@@ -4,6 +4,9 @@ import { config } from './vendure-config';
 async function start() {
   const app = await bootstrap(config);
   
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+  
   const jobQueueService = app.get(JobQueueService);
   jobQueueService.start();
   
