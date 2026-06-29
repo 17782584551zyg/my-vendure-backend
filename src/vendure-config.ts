@@ -15,6 +15,7 @@ import {
   Channel,
   Order,
   Zone,
+  RequestContextService,
 } from '@vendure/core';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
@@ -34,8 +35,11 @@ interface PayPalArgs {
 const paypalReturnMiddleware = async (req: any, res: any, next: any) => {
   const token = req.query.token;
   const orderCode = req.query.orderCode;
+  const payerId = req.query.PayerID;
   
-  console.log('[PayPal Return] Received:', { token, orderCode });
+  console.log('[PayPal Return] Received:', { token, orderCode, payerId });
+  console.log('[PayPal Return] STOREFRONT_URL:', process.env.STOREFRONT_URL);
+  console.log('[PayPal Return] VENDURE_API_URL:', process.env.VENDURE_API_URL);
   
   if (!token || !orderCode) {
     console.error('[PayPal Return] Missing token or orderCode');
@@ -45,18 +49,31 @@ const paypalReturnMiddleware = async (req: any, res: any, next: any) => {
   try {
     const orderService = (global as any).__vendureOrderService;
     const paymentService = (global as any).__vendurePaymentService;
+    const requestContextService = (global as any).__vendureRequestContextService;
     
     if (!orderService || !paymentService) {
       console.error('[PayPal Return] Services not available');
       return res.redirect(`${process.env.STOREFRONT_URL || ''}/checkout/payment`);
     }
 
-    const ctx = {
-      apiType: 'shop',
-      channelId: 1,
-      languageCode: 'en',
-      isAuthorized: true,
-    } as any;
+    let ctx: RequestContext;
+    try {
+      ctx = await requestContextService.create({
+        apiType: 'shop',
+        channelId: 1,
+        languageCode: LanguageCode.en,
+      });
+    } catch (ctxError) {
+      console.error('[PayPal Return] Failed to create context:', ctxError);
+      ctx = {
+        apiType: 'shop',
+        channelId: 1,
+        languageCode: LanguageCode.en,
+        isAuthorized: true,
+      } as any;
+    }
+
+    console.log('[PayPal Return] Created context');
 
     const order = await orderService.findOneByCode(ctx, orderCode);
     
@@ -69,12 +86,17 @@ const paypalReturnMiddleware = async (req: any, res: any, next: any) => {
 
     const lastPayment = order.payments?.[order.payments.length - 1];
     
-    if (!lastPayment || lastPayment.state !== 'Authorized') {
-      console.error('[PayPal Return] Payment not found or not Authorized');
+    if (!lastPayment) {
+      console.error('[PayPal Return] Payment not found');
       return res.redirect(`${process.env.STOREFRONT_URL || ''}/checkout/payment`);
     }
 
-    console.log('[PayPal Return] Payment found:', lastPayment.id, 'transactionId:', lastPayment.transactionId);
+    console.log('[PayPal Return] Payment found:', lastPayment.id, 'state:', lastPayment.state, 'transactionId:', lastPayment.transactionId);
+
+    if (lastPayment.state === 'Settled') {
+      console.log('[PayPal Return] Payment already settled');
+      return res.redirect(`${process.env.STOREFRONT_URL || ''}/checkout/confirmation/${orderCode}`);
+    }
 
     const handlerArgs = (lastPayment.method as any).handlerArgs as PayPalArgs;
     const clientId = handlerArgs.clientId || '';
@@ -108,6 +130,7 @@ const paypalReturnMiddleware = async (req: any, res: any, next: any) => {
     }
 
     const accessToken = tokenData.access_token;
+    console.log('[PayPal Return] Got access token');
 
     console.log('[PayPal Return] Capturing payment:', lastPayment.transactionId);
     
@@ -119,24 +142,38 @@ const paypalReturnMiddleware = async (req: any, res: any, next: any) => {
       },
     });
 
-    const captureData = await captureResponse.json() as { status: string; message?: string };
+    const captureData = await captureResponse.json() as any;
+    console.log('[PayPal Return] Capture response status:', captureResponse.status);
     console.log('[PayPal Return] Capture response:', JSON.stringify(captureData, null, 2));
 
-    if (captureData.status === 'COMPLETED') {
+    const captureStatus = captureData?.purchase_units?.[0]?.payments?.captures?.[0]?.status || captureData?.status;
+    
+    if (captureStatus === 'COMPLETED' || captureStatus === 'APPROVED') {
       console.log('[PayPal Return] Payment captured successfully');
       
-      await paymentService.settlePayment(ctx, lastPayment.id);
+      try {
+        await paymentService.settlePayment(ctx, lastPayment.id);
+        console.log('[PayPal Return] Payment settled');
+      } catch (settleError) {
+        console.error('[PayPal Return] Failed to settle payment:', settleError);
+      }
       
-      await orderService.transitionToState(ctx, order.id, 'PaymentSettled');
+      try {
+        await orderService.transitionToState(ctx, order.id, 'PaymentSettled');
+        console.log('[PayPal Return] Order state transitioned to PaymentSettled');
+      } catch (stateError) {
+        console.error('[PayPal Return] Failed to transition order state:', stateError);
+      }
       
       return res.redirect(`${process.env.STOREFRONT_URL || ''}/checkout/confirmation/${orderCode}`);
     }
 
-    console.error('[PayPal Return] Payment capture failed:', captureData.message || 'Unknown error');
+    console.error('[PayPal Return] Payment capture failed. Status:', captureStatus);
     return res.redirect(`${process.env.STOREFRONT_URL || ''}/checkout/payment`);
 
   } catch (error) {
     console.error('[PayPal Return] Error:', error);
+    console.error('[PayPal Return] Error stack:', (error as Error).stack);
     return res.redirect(`${process.env.STOREFRONT_URL || ''}/checkout/payment`);
   }
 };
@@ -264,7 +301,8 @@ export const config: VendureConfig = {
   ],
 };
 
-export const initPayPalServices = (orderService: any, paymentService: any) => {
+export const initPayPalServices = (orderService: any, paymentService: any, requestContextService: any) => {
   (global as any).__vendureOrderService = orderService;
   (global as any).__vendurePaymentService = paymentService;
+  (global as any).__vendureRequestContextService = requestContextService;
 };

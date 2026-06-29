@@ -8,7 +8,8 @@ async function start() {
     jobQueueService.start();
     const orderService = app.get(core_1.OrderService);
     const paymentService = app.get(core_1.PaymentService);
-    (0, vendure_config_1.initPayPalServices)(orderService, paymentService);
+    const requestContextService = app.get(core_1.RequestContextService);
+    (0, vendure_config_1.initPayPalServices)(orderService, paymentService, requestContextService);
     console.log('');
     console.log('Vendure server is now running!');
     console.log('Shop API: http://localhost:3002/shop-api');
