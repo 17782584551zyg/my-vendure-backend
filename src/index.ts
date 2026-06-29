@@ -1,16 +1,11 @@
-import { bootstrap, JobQueueService, OrderService, PaymentService, RequestContextService } from '@vendure/core';
-import { config, initPayPalServices } from './vendure-config';
+import { bootstrap, JobQueueService } from '@vendure/core';
+import { config } from './vendure-config';
 
 async function start() {
   const app = await bootstrap(config);
   
   const jobQueueService = app.get(JobQueueService);
   jobQueueService.start();
-  
-  const orderService = app.get(OrderService);
-  const paymentService = app.get(PaymentService);
-  const requestContextService = app.get(RequestContextService);
-  initPayPalServices(orderService, paymentService, requestContextService);
   
   console.log('');
   console.log('Vendure server is now running!');
@@ -20,7 +15,6 @@ async function start() {
   console.log('Admin credentials: superadmin / superadmin');
   console.log('');
   console.log('JobQueue is running - background jobs will be processed');
-  console.log('PayPal return middleware is ready');
 }
 
 start().catch(err => {
