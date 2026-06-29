@@ -132,8 +132,23 @@ const paypalPaymentHandler = new PaymentMethodHandler({
       const clientSecret = args.clientSecret || '';
       const environment = args.environment || 'sandbox';
       
+      console.log('[PayPal] settlePayment started');
+      console.log('[PayPal] order:', order.code);
+      console.log('[PayPal] payment id:', payment.id);
+      console.log('[PayPal] transactionId:', payment.transactionId);
+      
+      if (!payment.transactionId) {
+        console.error('[PayPal] settlePayment failed: No transactionId');
+        return { 
+          success: false, 
+          errorMessage: 'No PayPal transaction ID found' 
+        };
+      }
+      
       const apiUrl = environment === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
       const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      
+      console.log('[PayPal] Getting access token for capture');
       
       const tokenResponse = await fetch(`${apiUrl}/v1/oauth2/token`, {
         method: 'POST',
@@ -145,7 +160,19 @@ const paypalPaymentHandler = new PaymentMethodHandler({
       });
       
       const tokenData = await tokenResponse.json() as { access_token: string };
+      
+      if (!tokenResponse.ok) {
+        console.error('[PayPal] Token request failed in settlePayment:', tokenData);
+        return { 
+          success: false, 
+          errorMessage: 'Failed to get PayPal access token' 
+        };
+      }
+      
       const accessToken = tokenData.access_token;
+      console.log('[PayPal] Access token obtained for capture');
+      
+      console.log('[PayPal] Capturing payment with transactionId:', payment.transactionId);
       
       const captureResponse = await fetch(`${apiUrl}/v2/checkout/orders/${payment.transactionId}/capture`, {
         method: 'POST',
@@ -155,18 +182,49 @@ const paypalPaymentHandler = new PaymentMethodHandler({
         },
       });
       
-      const captureData = await captureResponse.json() as { status: string; message?: string };
+      console.log('[PayPal] Capture response status:', captureResponse.status);
       
-      if (captureData.status === 'COMPLETED') {
-        return { success: true };
+      const captureData = await captureResponse.json() as any;
+      console.log('[PayPal] settlePayment capture response:', JSON.stringify(captureData, null, 2));
+      
+      if (!captureResponse.ok) {
+        const errorMsg = captureData?.message || captureData?.details?.[0]?.issue || captureData?.error_description || 'Payment capture failed';
+        console.error('[PayPal] Capture failed:', errorMsg);
+        return { 
+          success: false, 
+          errorMessage: errorMsg 
+        };
       }
       
-      return { 
-        success: false, 
-        errorMessage: captureData.message || 'Payment capture failed' 
-      };
+      let captureStatus: string | undefined;
+      
+      if (captureData?.purchase_units?.[0]?.payments?.captures?.[0]) {
+        captureStatus = captureData.purchase_units[0].payments.captures[0].status;
+        console.log('[PayPal] Capture status from purchase_units:', captureStatus);
+      } else if (captureData?.status) {
+        captureStatus = captureData.status;
+        console.log('[PayPal] Capture status from root:', captureStatus);
+      } else {
+        console.error('[PayPal] Cannot find capture status in response');
+        return { 
+          success: false, 
+          errorMessage: 'Cannot determine capture status' 
+        };
+      }
+      
+      if (captureStatus === 'COMPLETED' || captureStatus === 'APPROVED') {
+        console.log('[PayPal] Payment capture successful, status:', captureStatus);
+        return { success: true };
+      } else {
+        console.error('[PayPal] Payment capture not completed, status:', captureStatus);
+        return { 
+          success: false, 
+          errorMessage: `Payment capture status is ${captureStatus}` 
+        };
+      }
     } catch (error) {
-      console.error('PayPal settlePayment error:', error);
+      console.error('[PayPal] settlePayment error:', error);
+      console.error('[PayPal] settlePayment error stack:', (error as Error).stack);
       return { 
         success: false, 
         errorMessage: (error as Error).message || 'Payment capture error' 
