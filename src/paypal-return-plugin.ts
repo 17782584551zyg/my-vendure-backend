@@ -1,12 +1,12 @@
 import { Controller, Get, Query, Redirect } from '@nestjs/common';
-import { PluginCommonModule, VendurePlugin, Logger, RequestContext, OrderService, PaymentService, OrderStateMachine, Channel } from '@vendure/core';
+import { PluginCommonModule, VendurePlugin, Logger, RequestContext, OrderService, PaymentService, ChannelService, Injector } from '@vendure/core';
 
 @Controller()
 export class PayPalReturnController {
   constructor(
     private orderService: OrderService,
     private paymentService: PaymentService,
-    private orderStateMachine: OrderStateMachine,
+    private channelService: ChannelService,
   ) {}
 
   @Get('paypal-return')
@@ -20,9 +20,11 @@ export class PayPalReturnController {
     }
 
     try {
+      const defaultChannel = await this.channelService.getDefaultChannel();
+      
       const ctx = new RequestContext({
         apiType: 'admin',
-        channelOrId: Channel.DEFAULT_CHANNEL,
+        channel: defaultChannel,
       });
 
       Logger.info('[PayPal Return] Querying order with code: ' + orderCode);
@@ -53,23 +55,14 @@ export class PayPalReturnController {
       if (lastPayment.state === 'Authorized') {
         Logger.info('[PayPal Return] Settling payment: ' + lastPayment.id);
 
-        const settledPayment = await this.paymentService.settlePayment(ctx, lastPayment.id);
+        const settleResult = await this.paymentService.settlePayment(ctx, lastPayment.id);
         
-        Logger.info('[PayPal Return] Settle result: ' + settledPayment.state);
-
-        if (settledPayment.state === 'Settled') {
+        if ('state' in settleResult && settleResult.state === 'Settled') {
           Logger.info('[PayPal Return] Payment settled successfully');
-
-          try {
-            await this.orderStateMachine.transitionToState(ctx, order.id, 'PaymentSettled');
-            Logger.info('[PayPal Return] Order transitioned to PaymentSettled');
-          } catch (transitionError) {
-            Logger.warn('[PayPal Return] Order transition failed: ' + String(transitionError));
-          }
           
           return { url: `${process.env.STOREFRONT_URL || ''}/checkout/confirmation/${order.code}` };
         } else {
-          Logger.error('[PayPal Return] Payment settlement failed, state: ' + settledPayment.state);
+          Logger.error('[PayPal Return] Payment settlement failed');
           return { url: `${process.env.STOREFRONT_URL || ''}/checkout/payment?error=settle_failed` };
         }
       } else {
@@ -86,7 +79,7 @@ export class PayPalReturnController {
 @VendurePlugin({
   imports: [PluginCommonModule],
   controllers: [PayPalReturnController],
-  providers: [OrderService, PaymentService, OrderStateMachine],
+  providers: [OrderService, PaymentService, ChannelService],
 })
 export class PayPalReturnPlugin {
 }
