@@ -22,6 +22,7 @@ import path from 'path';
 import { DefaultZonePlugin } from './default-zone-plugin';
 import { paypalPaymentHandler } from './paypal-payment-handler';
 import { PayPalReturnPlugin } from './paypal-return-plugin';
+import { ContactFormPlugin } from './contact-form-plugin';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
@@ -141,7 +142,11 @@ export const config: VendureConfig = {
     AdminUiPlugin.init({
       port: +(process.env.PORT || 3002),
       route: 'admin',
+      app: {
+        path: path.join(__dirname, '../admin-ui/dist/browser'),
+      },
     }),
     PayPalReturnPlugin,
+    ContactFormPlugin,
   ],
 };

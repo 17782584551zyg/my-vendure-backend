@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Build output - included for deployment
-# dist/
+# Build output
+dist/
+admin-ui/dist/
 
 # SQLite database
 *.sqlite
@@ -22,6 +23,3 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
-
-# Static assets - keep these as they contain product images
-# static/assets/

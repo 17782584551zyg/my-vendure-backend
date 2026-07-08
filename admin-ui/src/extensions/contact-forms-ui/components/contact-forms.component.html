@@ -1,0 +1,68 @@
+<vdr-page-header>
+  <vdr-page-title>Contact Form Submissions</vdr-page-title>
+  <span class="badge badge-primary">{{ totalItems$ | async }} records</span>
+</vdr-page-header>
+
+<div class="clr-row">
+  <div class="clr-col-12">
+    <vdr-data-table-2
+      id="contact-forms-list"
+      [items]="items$ | async"
+      [itemsPerPage]="itemsPerPage$ | async"
+      [totalItems]="totalItems$ | async"
+      [currentPage]="currentPage$ | async"
+      (pageChange)="setPageNumber($event)"
+      (itemsPerPageChange)="setItemsPerPage($event)"
+    >
+      <vdr-dt2-column [heading]="'ID'" [hiddenByDefault]="true">
+        <ng-template let-form="item">
+          <span class="label label-sm">{{ form.id }}</span>
+        </ng-template>
+      </vdr-dt2-column>
+      
+      <vdr-dt2-column [heading]="'Name'">
+        <ng-template let-form="item">
+          <div class="font-weight-semibold">{{ form.firstName }} {{ form.lastName }}</div>
+        </ng-template>
+      </vdr-dt2-column>
+      
+      <vdr-dt2-column [heading]="'Email'">
+        <ng-template let-form="item">
+          <a href="mailto:{{ form.email }}" class="text-link">{{ form.email }}</a>
+        </ng-template>
+      </vdr-dt2-column>
+      
+      <vdr-dt2-column [heading]="'Phone'">
+        <ng-template let-form="item">
+          <span>{{ form.phone || '-' }}</span>
+        </ng-template>
+      </vdr-dt2-column>
+      
+      <vdr-dt2-column [heading]="'Country'">
+        <ng-template let-form="item">
+          <span>{{ form.country || '-' }}</span>
+        </ng-template>
+      </vdr-dt2-column>
+      
+      <vdr-dt2-column [heading]="'Company'">
+        <ng-template let-form="item">
+          <span>{{ form.company || '-' }}</span>
+        </ng-template>
+      </vdr-dt2-column>
+      
+      <vdr-dt2-column [heading]="'Source'">
+        <ng-template let-form="item">
+          <span class="badge" [class]="getSourceBadgeClass(form.source)">
+            {{ getSourceLabel(form.source) }}
+          </span>
+        </ng-template>
+      </vdr-dt2-column>
+      
+      <vdr-dt2-column [heading]="'Created'">
+        <ng-template let-form="item">
+          <span>{{ form.createdAt | localeDate : 'short' }}</span>
+        </ng-template>
+      </vdr-dt2-column>
+    </vdr-data-table-2>
+  </div>
+</div>
