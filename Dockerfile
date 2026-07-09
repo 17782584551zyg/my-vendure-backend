@@ -10,8 +10,7 @@ COPY . .
 RUN npm run build
 
 WORKDIR /app/admin-ui
-RUN npm ci
-RUN npm run build
+RUN npx ng build --configuration production
 
 FROM node:20-alpine AS production
 
