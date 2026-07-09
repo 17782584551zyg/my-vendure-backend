@@ -1,4 +1,4 @@
-# Build timestamp: 2026-07-08
+# Build timestamp: 2026-07-09
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -10,7 +10,6 @@ COPY . .
 RUN npm run build
 
 WORKDIR /app/admin-ui
-COPY admin-ui/package.json admin-ui/package-lock.json ./
 RUN npm ci
 RUN npm run build
 
