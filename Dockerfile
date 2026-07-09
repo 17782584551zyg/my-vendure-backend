@@ -9,8 +9,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-WORKDIR /app/admin-ui
-RUN /app/node_modules/.bin/ng build --configuration production
+RUN npx vendure build
 
 FROM node:20-alpine AS production
 

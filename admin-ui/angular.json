@@ -86,7 +86,6 @@
             "extractLicenses": false,
             "sourceMap": true,
             "optimization": false,
-            "namedChunks": true,
             "browser": "src/main.ts"
           },
           "configurations": {
@@ -109,7 +108,6 @@
                 }
               },
               "outputHashing": "all",
-              "namedChunks": false,
               "extractLicenses": true
             }
           },
