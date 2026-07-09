@@ -15,16 +15,13 @@
       },
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "baseHref": "/admin/",
-            "outputPath": {
-              "base": "dist"
-            },
+            "outputPath": "dist/browser",
             "index": "src/index.html",
-            "polyfills": [
-              "src/polyfills.ts"
-            ],
+            "main": "src/main.ts",
+            "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.app.json",
             "assets": [
               {
@@ -55,15 +52,7 @@
               "includePaths": [
                 "./src/styles",
                 "./src/fonts"
-              ],
-              "sass": {
-                "silenceDeprecations": [
-                  "mixed-decls",
-                  "color-functions",
-                  "global-builtin",
-                  "import"
-                ]
-              }
+              ]
             },
             "allowedCommonJsDependencies": [
               "graphql-tag",
@@ -85,8 +74,7 @@
             ],
             "extractLicenses": false,
             "sourceMap": true,
-            "optimization": false,
-            "browser": "src/main.ts"
+            "optimization": false
           },
           "configurations": {
             "production": {
