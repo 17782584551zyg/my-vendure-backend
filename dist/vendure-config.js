@@ -11,6 +11,7 @@ const path_1 = __importDefault(require("path"));
 const default_zone_plugin_1 = require("./default-zone-plugin");
 const paypal_payment_handler_1 = require("./paypal-payment-handler");
 const paypal_return_plugin_1 = require("./paypal-return-plugin");
+const contact_form_plugin_1 = require("./contact-form-plugin");
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
 const alwaysEligiblePaymentChecker = new core_1.PaymentMethodEligibilityChecker({
@@ -124,8 +125,12 @@ exports.config = {
         admin_ui_plugin_1.AdminUiPlugin.init({
             port: +(process.env.PORT || 3002),
             route: 'admin',
+            app: {
+                path: path_1.default.join(__dirname, '../admin-ui/dist/browser'),
+            },
         }),
         paypal_return_plugin_1.PayPalReturnPlugin,
+        contact_form_plugin_1.ContactFormPlugin,
     ],
 };
 //# sourceMappingURL=vendure-config.js.map
