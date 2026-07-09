@@ -23,6 +23,18 @@
       "dom",
       "esnext.asynciterable"
     ],
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "paths": {
+      "@vendure/admin-ui/core": ["../node_modules/@vendure/admin-ui/core"],
+      "@vendure/admin-ui/login": ["../node_modules/@vendure/admin-ui/login"],
+      "@vendure/admin-ui/dashboard": ["../node_modules/@vendure/admin-ui/dashboard"],
+      "@vendure/admin-ui/catalog": ["../node_modules/@vendure/admin-ui/catalog"],
+      "@vendure/admin-ui/customer": ["../node_modules/@vendure/admin-ui/customer"],
+      "@vendure/admin-ui/order": ["../node_modules/@vendure/admin-ui/order"],
+      "@vendure/admin-ui/marketing": ["../node_modules/@vendure/admin-ui/marketing"],
+      "@vendure/admin-ui/settings": ["../node_modules/@vendure/admin-ui/settings"],
+      "@vendure/admin-ui/system": ["../node_modules/@vendure/admin-ui/system"],
+      "@biesbjerg/ngx-translate-extract-marker": ["../node_modules/@biesbjerg/ngx-translate-extract-marker"]
+    }
   }
 }

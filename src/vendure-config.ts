@@ -142,6 +142,9 @@ export const config: VendureConfig = {
     AdminUiPlugin.init({
       port: +(process.env.PORT || 3002),
       route: 'admin',
+      app: {
+        path: './admin-ui/dist',
+      },
     }),
     PayPalReturnPlugin,
     ContactFormPlugin,
