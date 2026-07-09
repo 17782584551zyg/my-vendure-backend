@@ -9,6 +9,10 @@
     "populate": "ts-node src/populate.ts"
   },
   "dependencies": {
+    "@biesbjerg/ngx-translate-extract-marker": "^1.0.0",
+    "@clr/icons": "^13.0.2",
+    "@clr/ui": "^18.2.1",
+    "@ng-select/ng-select": "^23.2.0",
     "@vendure-community/elasticsearch-plugin": "^1.1.0",
     "@vendure/admin-ui-plugin": "^3.6.4",
     "@vendure/asset-server-plugin": "^3.6.4",
@@ -21,24 +25,27 @@
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^16.2.0",
-    "@angular/cli": "^16.2.0",
-    "@angular/common": "^16.2.0",
-    "@angular/compiler": "^16.2.0",
-    "@angular/compiler-cli": "^16.2.0",
-    "@angular/core": "^16.2.0",
-    "@angular/forms": "^16.2.0",
-    "@angular/platform-browser": "^16.2.0",
-    "@angular/platform-browser-dynamic": "^16.2.0",
-    "@angular/router": "^16.2.0",
+    "@angular-devkit/build-angular": "^19.2.27",
+    "@angular/animations": "^19.2.25",
+    "@angular/cdk": "^19.2.19",
+    "@angular/cli": "^19.2.27",
+    "@angular/common": "^19.2.25",
+    "@angular/compiler": "^19.2.25",
+    "@angular/compiler-cli": "^19.2.25",
+    "@angular/core": "^19.2.25",
+    "@angular/forms": "^19.2.25",
+    "@angular/platform-browser": "^19.2.25",
+    "@angular/platform-browser-dynamic": "^19.2.25",
+    "@angular/router": "^19.2.25",
     "@types/better-sqlite3": "^7.6.11",
     "@types/braintree": "^3.4.4",
     "@types/node": "^20.0.0",
+    "@vendure/admin-ui": "^3.6.4",
     "@vendure/cli": "^3.7.0",
     "rxjs": "^7.8.0",
     "ts-node-dev": "^2.0.0",
     "tslib": "^2.6.0",
-    "typescript": "^5.0.0",
-    "zone.js": "~0.13.0"
+    "typescript": "^5.8.2",
+    "zone.js": "^0.15.1"
   }
 }
