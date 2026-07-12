@@ -21,6 +21,10 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/static ./static
 COPY --from=builder /app/admin-ui/dist ./admin-ui/dist
 
+RUN mkdir -p /app/static/assets && chown -R node:node /app/static
+
+USER node
+
 EXPOSE 3002
 
 CMD ["npm", "start"]
