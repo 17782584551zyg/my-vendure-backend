@@ -112,7 +112,9 @@ export const config: VendureConfig = {
       },
   customFields: {
     Product: [
-      { name: 'productDetails', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Product Details' }] },
+      { name: 'weight', type: 'string', label: [{ languageCode: LanguageCode.en, value: 'Weight' }] },
+      { name: 'specifications', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Specifications' }] },
+      { name: 'usage', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Usage Instructions' }] },
       { name: 'detailImage', type: 'relation', entity: Asset, label: [{ languageCode: LanguageCode.en, value: 'Detail Image' }] },
     ],
   },
