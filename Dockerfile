@@ -1,4 +1,4 @@
-# Build timestamp: 2026-07-09
+﻿# Build timestamp: 2026-07-09
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -21,7 +21,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/static ./static
 COPY --from=builder /app/admin-ui/dist ./admin-ui/dist
 
-RUN mkdir -p /app/static/assets && chown -R node:node /app/static
+RUN mkdir -p /app/static/assets && chown -R node:node /app/static /app/admin-ui/dist /app/admin-ui/dist
 
 USER node
 
