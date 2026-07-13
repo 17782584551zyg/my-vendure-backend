@@ -90,7 +90,7 @@ export const config: VendureConfig = {
     port: +(process.env.PORT || 3002),
     adminApiPath: 'admin-api',
     shopApiPath: 'shop-api',
-    cors: true,
+    cors: { origin: true, credentials: true },
   },
   authOptions: {
     tokenMethod: 'bearer',
