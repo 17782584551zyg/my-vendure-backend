@@ -112,7 +112,7 @@ export const config: VendureConfig = {
       },
   customFields: { Channel: [{ name: 'bannerImages', type: 'relation', list: true, entity: Asset, label: [{ languageCode: LanguageCode.en, value: 'Banner Images' }] }],
     Product: [
-      { name: 'productDetails', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Product Details' }] },
+      { name: 'productDetails', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Product Details' }], ui: { component: 'rich-text-form-input' } },
       { name: 'detailImage', type: 'relation', entity: Asset, label: [{ languageCode: LanguageCode.en, value: 'Detail Image' }] },
     ],
   },
