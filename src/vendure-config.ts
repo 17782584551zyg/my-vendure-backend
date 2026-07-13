@@ -110,9 +110,9 @@ export const config: VendureConfig = {
         synchronize: true,
         logging: false,
       },
-  customFields: {
+  customFields: { Channel: [{ name: 'bannerImages', type: 'relation', list: true, entity: Asset, label: [{ languageCode: LanguageCode.en, value: 'Banner Images' }] }],
     Product: [
-      { name: 'productDetails', type: 'localeRichText', label: [{ languageCode: LanguageCode.en, value: 'Product Details' }] },
+      { name: 'productDetails', type: 'localeText', label: [{ languageCode: LanguageCode.en, value: 'Product Details' }] },
       { name: 'detailImage', type: 'relation', entity: Asset, label: [{ languageCode: LanguageCode.en, value: 'Detail Image' }] },
     ],
   },
