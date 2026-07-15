@@ -1,0 +1,10 @@
+[build]
+builder = "Dockerfile"
+
+[deploy]
+startCommand = "npm start"
+
+[[volumes]]
+name = "vendure-assets"
+path = "/app/static/assets"
+readOnly = false
