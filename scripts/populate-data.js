@@ -250,7 +250,7 @@ async function addStock(variantId, quantity) {
   `, { input: { id: variantId, stockOnHand: quantity } });
 }
 
-async function createProducts(taxCategoryId, stockLocationId) {
+async function createProducts(taxCategoryId, stockLocationId, collectionId) {
   console.log('📱 Creating Products...');
   
   const products = [
@@ -274,6 +274,8 @@ async function createProducts(taxCategoryId, stockLocationId) {
     },
   ];
   
+  const productIds = [];
+  
   for (const product of products) {
     const productData = await graphql(`
       mutation CreateProduct($input: CreateProductInput!) {
@@ -287,6 +289,7 @@ async function createProducts(taxCategoryId, stockLocationId) {
       enabled: true
     } });
     
+    productIds.push(productData.createProduct.id);
     console.log(`✅ Product created: ${productData.createProduct.name}`);
     
     const variantData = await graphql(`
@@ -307,10 +310,11 @@ async function createProducts(taxCategoryId, stockLocationId) {
     const variantId = variantData.createProductVariants[0].id;
     console.log(`   ✅ Variant created: ${variantData.createProductVariants[0].sku}`);
     
-    // Add stock to variant
     await addStock(variantId, 100);
     console.log(`   ✅ Stock added: 100 units`);
   }
+  
+  return productIds;
 }
 
 async function main() {
@@ -324,8 +328,12 @@ async function main() {
     const taxCategoryId = await createTaxCategory();
     await createStockLocation();
     const stockLocationId = await getStockLocationId();
-    await createCollection();
-    await createPaymentMethod(channelId);
+    const collectionId = await createCollection();
+    try {
+      await createPaymentMethod(channelId);
+    } catch (e) {
+      console.log('⚠️ Payment method creation skipped:', e.message);
+    }
     await createShippingMethod(channelId);
     await createProducts(taxCategoryId, stockLocationId);
     

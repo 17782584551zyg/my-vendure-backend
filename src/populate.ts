@@ -61,46 +61,67 @@ async function populateData() {
       ],
     });
     
-    // Create products
-    console.log('Creating products...');
+    // Check existing products
+    const existingProducts = await productService.findAll();
     
     // Product 1: Laptop
-    await productService.create({
-      translations: [{ languageCode: 'en', name: 'Laptop', slug: 'laptop', description: 'High-performance laptop' }],
-      facetValues: [{ facetId: categoryFacet.id, facetValueId: categoryFacet.values[0].id }],
-      optionGroups: [
-        { code: 'color', translations: [{ languageCode: 'en', name: 'Color' }] },
-        { code: 'storage', translations: [{ languageCode: 'en', name: 'Storage' }] },
-      ],
-      variants: [
-        { sku: 'LAP-SIL-128', price: 99900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Silver 128GB' }], optionValues: [{ optionGroupId: 'color', name: 'Silver' }, { optionGroupId: 'storage', name: '128GB' }] },
-        { sku: 'LAP-SIL-256', price: 129900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Silver 256GB' }], optionValues: [{ optionGroupId: 'color', name: 'Silver' }, { optionGroupId: 'storage', name: '256GB' }] },
-        { sku: 'LAP-BLK-128', price: 99900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Black 128GB' }], optionValues: [{ optionGroupId: 'color', name: 'Black' }, { optionGroupId: 'storage', name: '128GB' }] },
-        { sku: 'LAP-BLK-256', price: 129900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Black 256GB' }], optionValues: [{ optionGroupId: 'color', name: 'Black' }, { optionGroupId: 'storage', name: '256GB' }] },
-      ],
-    });
+    const laptopExists = existingProducts.items.some((p: any) => p.slug === 'laptop');
+    if (!laptopExists) {
+      console.log('Creating Laptop product...');
+      await productService.create({
+        translations: [{ languageCode: 'en', name: 'Laptop', slug: 'laptop', description: 'High-performance laptop' }],
+        facetValues: [{ facetId: categoryFacet.id, facetValueId: categoryFacet.values[0].id }],
+        optionGroups: [
+          { code: 'color', translations: [{ languageCode: 'en', name: 'Color' }] },
+          { code: 'storage', translations: [{ languageCode: 'en', name: 'Storage' }] },
+        ],
+        variants: [
+          { sku: 'LAP-SIL-128', price: 99900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Silver 128GB' }], optionValues: [{ optionGroupId: 'color', name: 'Silver' }, { optionGroupId: 'storage', name: '128GB' }] },
+          { sku: 'LAP-SIL-256', price: 129900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Silver 256GB' }], optionValues: [{ optionGroupId: 'color', name: 'Silver' }, { optionGroupId: 'storage', name: '256GB' }] },
+          { sku: 'LAP-BLK-128', price: 99900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Black 128GB' }], optionValues: [{ optionGroupId: 'color', name: 'Black' }, { optionGroupId: 'storage', name: '128GB' }] },
+          { sku: 'LAP-BLK-256', price: 129900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Black 256GB' }], optionValues: [{ optionGroupId: 'color', name: 'Black' }, { optionGroupId: 'storage', name: '256GB' }] },
+        ],
+      });
+      console.log('✅ Laptop product created');
+    } else {
+      console.log('ℹ️ Laptop product already exists');
+    }
     
     // Product 2: Headphones
-    await productService.create({
-      translations: [{ languageCode: 'en', name: 'Wireless Headphones', slug: 'wireless-headphones', description: 'Premium wireless headphones' }],
-      facetValues: [{ facetId: categoryFacet.id, facetValueId: categoryFacet.values[0].id }],
-      variants: [
-        { sku: 'HEAD-BT', price: 19900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Bluetooth Headphones' }] },
-      ],
-    });
+    const headphonesExists = existingProducts.items.some((p: any) => p.slug === 'wireless-headphones');
+    if (!headphonesExists) {
+      console.log('Creating Wireless Headphones product...');
+      await productService.create({
+        translations: [{ languageCode: 'en', name: 'Wireless Headphones', slug: 'wireless-headphones', description: 'Premium wireless headphones' }],
+        facetValues: [{ facetId: categoryFacet.id, facetValueId: categoryFacet.values[0].id }],
+        variants: [
+          { sku: 'HEAD-BT', price: 19900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Bluetooth Headphones' }] },
+        ],
+      });
+      console.log('✅ Wireless Headphones product created');
+    } else {
+      console.log('ℹ️ Wireless Headphones product already exists');
+    }
     
     // Product 3: Smartphone
-    await productService.create({
-      translations: [{ languageCode: 'en', name: 'Smartphone', slug: 'smartphone', description: 'Modern smartphone' }],
-      facetValues: [{ facetId: categoryFacet.id, facetValueId: categoryFacet.values[0].id }],
-      optionGroups: [
-        { code: 'color', translations: [{ languageCode: 'en', name: 'Color' }] },
-      ],
-      variants: [
-        { sku: 'PHONE-WHT', price: 69900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'White' }], optionValues: [{ optionGroupId: 'color', name: 'White' }] },
-        { sku: 'PHONE-BLU', price: 69900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Blue' }], optionValues: [{ optionGroupId: 'color', name: 'Blue' }] },
-      ],
-    });
+    const smartphoneExists = existingProducts.items.some((p: any) => p.slug === 'smartphone');
+    if (!smartphoneExists) {
+      console.log('Creating Smartphone product...');
+      await productService.create({
+        translations: [{ languageCode: 'en', name: 'Smartphone', slug: 'smartphone', description: 'Modern smartphone' }],
+        facetValues: [{ facetId: categoryFacet.id, facetValueId: categoryFacet.values[0].id }],
+        optionGroups: [
+          { code: 'color', translations: [{ languageCode: 'en', name: 'Color' }] },
+        ],
+        variants: [
+          { sku: 'PHONE-WHT', price: 69900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'White' }], optionValues: [{ optionGroupId: 'color', name: 'White' }] },
+          { sku: 'PHONE-BLU', price: 69900, taxCategoryId: taxCategory.id, translations: [{ languageCode: 'en', name: 'Blue' }], optionValues: [{ optionGroupId: 'color', name: 'Blue' }] },
+        ],
+      });
+      console.log('✅ Smartphone product created');
+    } else {
+      console.log('ℹ️ Smartphone product already exists');
+    }
     
     console.log('✅ Initial data created successfully!');
     console.log('Products: Laptop, Smartphone, Wireless Headphones');
