@@ -1,4 +1,6 @@
 const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 
 const ADMIN_API_URL = 'http://localhost:3002/admin-api';
 const USERNAME = 'superadmin';
@@ -136,7 +138,33 @@ async function createStockLocation() {
   return data.createStockLocation.id;
 }
 
-async function createCollection() {
+async function uploadAsset(filePath, fileName) {
+  console.log(`📤 Uploading asset: ${fileName}...`);
+  const fileData = fs.readFileSync(filePath);
+  const base64Data = fileData.toString('base64');
+  
+  const data = await graphql(`
+    mutation CreateAsset($input: CreateAssetInput!) {
+      createAsset(input: $input) {
+        id
+        name
+        preview
+      }
+    }
+  `, { input: { 
+    file: {
+      filename: fileName,
+      mimeType: 'image/png',
+      fileSize: fileData.length,
+      data: base64Data,
+    },
+  } });
+  
+  console.log(`✅ Asset uploaded: ${data.createAsset.name}`);
+  return data.createAsset;
+}
+
+async function createCollection(assetId) {
   console.log('📁 Creating Collection...');
   const data = await graphql(`
     mutation CreateCollection($input: CreateCollectionInput!) {
@@ -148,7 +176,8 @@ async function createCollection() {
     }
   `, { input: { 
     translations: [{ languageCode: 'en', name: 'Electronics', slug: 'electronics', description: 'Electronic devices' }],
-    filters: []
+    filters: [],
+    featuredAssetId: assetId,
   } });
   
   console.log('✅ Collection created:', data.createCollection.name);
@@ -317,6 +346,14 @@ async function createProducts(taxCategoryId, stockLocationId, collectionId) {
   return productIds;
 }
 
+async function createPlaceholderImage(width, height, text) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <rect fill="#f3f4f6" width="${width}" height="${height}"/>
+    <text fill="#6b7280" font-family="sans-serif" font-size="24" x="50%" y="50%" text-anchor="middle" dy=".3em">${text}</text>
+  </svg>`;
+  return Buffer.from(svg, 'utf8');
+}
+
 async function main() {
   try {
     await login();
@@ -328,7 +365,56 @@ async function main() {
     const taxCategoryId = await createTaxCategory();
     await createStockLocation();
     const stockLocationId = await getStockLocationId();
-    const collectionId = await createCollection();
+    
+    const collectionAsset = await uploadAsset(
+      path.join(__dirname, '../static/assets/collection.png'),
+      'collection.png'
+    ).catch(async () => {
+      console.log('⚠️ Using placeholder image for collection...');
+      const svgBuffer = await createPlaceholderImage(400, 400, 'Electronics');
+      const base64Data = svgBuffer.toString('base64');
+      const data = await graphql(`
+        mutation CreateAsset($input: CreateAssetInput!) {
+          createAsset(input: $input) {
+            id
+            name
+            preview
+          }
+        }
+      `, { input: { 
+        file: {
+          filename: 'collection-placeholder.png',
+          mimeType: 'image/svg+xml',
+          fileSize: svgBuffer.length,
+          data: base64Data,
+        },
+      } });
+      return data.createAsset;
+    });
+    
+    const collectionId = await createCollection(collectionAsset.id);
+    
+    for (const productName of ['Laptop', 'Smartphone', 'Wireless Headphones']) {
+      const svgBuffer = await createPlaceholderImage(400, 400, productName);
+      const base64Data = svgBuffer.toString('base64');
+      await graphql(`
+        mutation CreateAsset($input: CreateAssetInput!) {
+          createAsset(input: $input) {
+            id
+            name
+            preview
+          }
+        }
+      `, { input: { 
+        file: {
+          filename: `${productName.toLowerCase().replace(' ', '-')}.png`,
+          mimeType: 'image/svg+xml',
+          fileSize: svgBuffer.length,
+          data: base64Data,
+        },
+      } });
+    }
+    
     try {
       await createPaymentMethod(channelId);
     } catch (e) {
