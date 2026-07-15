@@ -2,9 +2,9 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 
-const ADMIN_API_URL = 'http://localhost:3002/admin-api';
-const USERNAME = 'superadmin';
-const PASSWORD = 'superadmin';
+const ADMIN_API_URL = process.env.ADMIN_API_URL || 'http://localhost:3002/admin-api';
+const USERNAME = process.env.ADMIN_USERNAME || 'superadmin';
+const PASSWORD = process.env.ADMIN_PASSWORD || 'superadmin';
 
 let authToken = '';
 
@@ -22,6 +22,36 @@ async function graphql(query, variables = {}) {
     throw new Error(`GraphQL Error: ${JSON.stringify(result.errors)}`);
   }
   return result.data;
+}
+
+async function getExistingProducts() {
+  console.log('🔍 Checking existing products...');
+  const data = await graphql(`
+    query Products {
+      products {
+        items {
+          id
+          name
+          slug
+          customFields
+        }
+      }
+    }
+  `);
+  return data.products.items;
+}
+
+async function updateProductCustomFields(productId, customFields) {
+  console.log(`🔄 Updating product ${productId}...`);
+  await graphql(`
+    mutation UpdateProduct($input: UpdateProductInput!) {
+      updateProduct(input: $input) {
+        id
+        name
+      }
+    }
+  `, { input: { id: productId, customFields } });
+  console.log(`✅ Product ${productId} updated`);
 }
 
 async function login() {
@@ -448,6 +478,51 @@ async function main() {
     }
     await createShippingMethod(channelId);
     await createProducts(taxCategoryId, stockLocationId);
+    
+    const existingProducts = await getExistingProducts();
+    for (const product of existingProducts) {
+      try {
+        const customFields = typeof product.customFields === 'string' 
+          ? JSON.parse(product.customFields) 
+          : product.customFields || {};
+        
+        if (!customFields.productDetails) {
+          const productDetailsMap = {
+            'Laptop': '<p>This is a premium laptop with the latest Intel processor, 16GB RAM, and 512GB SSD storage.</p><ul><li>High-resolution display</li><li>Long battery life</li><li>Lightweight design</li></ul>',
+            'Smartphone': '<p>Experience next-generation mobile technology with our flagship smartphone.</p><ul><li>6.7 inch AMOLED display</li><li>50MP camera system</li><li>5G connectivity</li></ul>',
+            'Wireless Headphones': '<p>Immerse yourself in premium audio quality with active noise cancellation.</p><ul><li>40-hour battery life</li><li>Active Noise Cancellation</li><li>Premium sound quality</li></ul>',
+          };
+          
+          const productDetails = productDetailsMap[product.name] || '<p>No details available.</p>';
+          
+          const svgBuffer = await createPlaceholderImage(600, 400, `${product.name} Detail`);
+          const base64Data = svgBuffer.toString('base64');
+          const detailAssetData = await graphql(`
+            mutation CreateAsset($input: CreateAssetInput!) {
+              createAsset(input: $input) {
+                id
+                name
+                preview
+              }
+            }
+          `, { input: { 
+            file: {
+              filename: `${product.slug}-detail.png`,
+              mimeType: 'image/svg+xml',
+              fileSize: svgBuffer.length,
+              data: base64Data,
+            },
+          } });
+          
+          await updateProductCustomFields(product.id, {
+            productDetails: { en: productDetails },
+            detailImage: detailAssetData.createAsset.id,
+          });
+        }
+      } catch (e) {
+        console.log(`⚠️ Failed to update product ${product.name}:`, e.message);
+      }
+    }
     
     console.log('');
     console.log('🎉 All data created successfully!');
