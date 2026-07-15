@@ -288,24 +288,46 @@ async function createProducts(taxCategoryId, stockLocationId, collectionId) {
       slug: 'laptop',
       description: 'A high-performance laptop with the latest technology',
       price: 99900,
+      productDetails: '<p>This is a premium laptop with the latest Intel processor, 16GB RAM, and 512GB SSD storage.</p><ul><li>High-resolution display</li><li>Long battery life</li><li>Lightweight design</li></ul>',
     },
     {
       name: 'Smartphone',
       slug: 'smartphone',
       description: 'A modern smartphone with advanced features',
       price: 69900,
+      productDetails: '<p>Experience next-generation mobile technology with our flagship smartphone.</p><ul><li>6.7 inch AMOLED display</li><li>50MP camera system</li><li>5G connectivity</li></ul>',
     },
     {
       name: 'Wireless Headphones',
       slug: 'wireless-headphones',
       description: 'Premium wireless headphones with noise cancellation',
       price: 19900,
+      productDetails: '<p>Immerse yourself in premium audio quality with active noise cancellation.</p><ul><li>40-hour battery life</li><li>Active Noise Cancellation</li><li>Premium sound quality</li></ul>',
     },
   ];
   
   const productIds = [];
   
   for (const product of products) {
+    const svgBuffer = await createPlaceholderImage(600, 400, `${product.name} Detail`);
+    const base64Data = svgBuffer.toString('base64');
+    const detailAssetData = await graphql(`
+      mutation CreateAsset($input: CreateAssetInput!) {
+        createAsset(input: $input) {
+          id
+          name
+          preview
+        }
+      }
+    `, { input: { 
+      file: {
+        filename: `${product.slug}-detail.png`,
+        mimeType: 'image/svg+xml',
+        fileSize: svgBuffer.length,
+        data: base64Data,
+      },
+    } });
+    
     const productData = await graphql(`
       mutation CreateProduct($input: CreateProductInput!) {
         createProduct(input: $input) {
@@ -315,7 +337,11 @@ async function createProducts(taxCategoryId, stockLocationId, collectionId) {
       }
     `, { input: { 
       translations: [{ languageCode: 'en', name: product.name, slug: product.slug, description: product.description }],
-      enabled: true
+      enabled: true,
+      customFields: {
+        productDetails: { en: product.productDetails },
+        detailImage: detailAssetData.createAsset.id,
+      },
     } });
     
     productIds.push(productData.createProduct.id);
