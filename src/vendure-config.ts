@@ -136,7 +136,7 @@ export const config: VendureConfig = {
     AssetServerPlugin.init({
       route: 'assets',
       assetUploadDir: path.join(__dirname, '../static/assets'),
-      assetUrlPrefix: isProduction ? process.env.BACKEND_URL + '/assets' : undefined,
+      assetUrlPrefix: isProduction && process.env.BACKEND_URL ? process.env.BACKEND_URL + '/assets' : undefined,
     }),
     AdminUiPlugin.init({
       port: +(process.env.PORT || 3002),
