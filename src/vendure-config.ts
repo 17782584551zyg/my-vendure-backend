@@ -26,6 +26,7 @@ import { ContactFormPlugin } from './contact-form-plugin';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
+const backendUrl = process.env.BACKEND_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : undefined);
 
 const alwaysEligiblePaymentChecker = new PaymentMethodEligibilityChecker({
   code: 'always-eligible-payment-checker',
@@ -136,7 +137,7 @@ export const config: VendureConfig = {
     AssetServerPlugin.init({
       route: 'assets',
       assetUploadDir: path.join(__dirname, '../static/assets'),
-      assetUrlPrefix: isProduction && process.env.BACKEND_URL ? process.env.BACKEND_URL + '/assets' : undefined,
+      assetUrlPrefix: isProduction && backendUrl ? `${backendUrl}/assets` : undefined,
     }),
     AdminUiPlugin.init({
       port: +(process.env.PORT || 3002),
